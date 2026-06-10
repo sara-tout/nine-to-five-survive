@@ -12,6 +12,7 @@ export interface Scenario {
   time: string;
   icon: string;
   locationLabel: string;
+  npcId?: string;
   title: string;
   description: string;
   yesLabel: string;
@@ -26,9 +27,10 @@ export const SCENARIOS: Scenario[] = [
     time: '5:15 PM',
     icon: '💻',
     locationLabel: 'Your Desk',
+    npcId: 'derek',
     title: 'The After-Hours "Quick Fix"',
     description:
-      'Your product owner pings you: "Hey, can you knock out this one small task tonight? It\'s not urgent but would be great to have done." Your gym bag stares at you from under your desk.',
+      'Derek Slides into your DMs: "Super quick one — not urgent, but would be great to have done tonight. Just want to close the loop on our north-star deliverable." Your gym bag stares at you from under your desk.',
     yesLabel: 'Stay & do it',
     noLabel: 'Hit the gym',
     yesOutcomes: [
@@ -63,7 +65,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         narrative:
-          'You left, but your PO sent a passive-aggressive "no worries!" at 5:17 PM. You spent the whole workout wondering if you\'re getting fired. Gains: zero.',
+          'You left, but Derek sent a passive-aggressive "no worries!" at 5:17 PM. You spent the whole workout wondering if you\'re getting fired. Gains: zero.',
         energy: 5,
         sanity: -15,
         performance: -5,
@@ -77,9 +79,10 @@ export const SCENARIOS: Scenario[] = [
     time: '9:30 AM',
     icon: '📅',
     locationLabel: 'Meeting Room',
+    npcId: 'calendar-warrior',
     title: 'Meeting Marathon Monday',
     description:
-      'You have 6 back-to-back meetings today. Your manager just added a 7th: "Quick sync to align on alignment." You could decline and actually do your job instead.',
+      'Patricia booked you into 6 back-to-back meetings. She just added a 7th: "Quick sync to align on alignment." You could decline and actually do your job instead.',
     yesLabel: 'Accept all meetings',
     noLabel: 'Decline & do real work',
     yesOutcomes: [
@@ -128,6 +131,7 @@ export const SCENARIOS: Scenario[] = [
     time: '12:15 PM',
     icon: '🍱',
     locationLabel: 'Kitchen Fridge',
+    npcId: 'karen',
     title: 'The Lunch Thief Strikes Again',
     description:
       'Someone ate your clearly-labeled lunch from the fridge. Again. Karen from accounting is suspiciously not hungry. Do you confront her or just order delivery and suffer in silence?',
@@ -230,9 +234,10 @@ export const SCENARIOS: Scenario[] = [
     time: '2:00 PM',
     icon: '🎤',
     locationLabel: 'Presentation Area',
+    npcId: 'derek',
     title: 'Surprise Demo Day',
     description:
-      'Your manager casually mentions: "Oh, can you demo what you\'ve been working on to the leadership team in 30 minutes?" Your feature is 60% done and the other 40% is held together with console.logs.',
+      'Derek drops into your standup: "Leadership wants a quick demo in 30 minutes — just to socialize the north-star vision." Your feature is 60% done and the other 40% is held together with console.logs.',
     yesLabel: 'Wing the demo',
     noLabel: 'Ask to reschedule',
     yesOutcomes: [

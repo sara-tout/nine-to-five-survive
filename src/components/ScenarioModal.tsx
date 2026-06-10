@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Scenario } from '../data/scenarios';
+import { getNPC } from '../data/officeNPCs';
 
 interface ScenarioModalProps {
   scenario: Scenario;
@@ -9,6 +10,8 @@ interface ScenarioModalProps {
 }
 
 export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
+  const npc = scenario.npcId ? getNPC(scenario.npcId) : undefined;
+
   return (
     <View style={styles.overlay}>
       <View style={styles.backdrop} />
@@ -26,6 +29,16 @@ export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
                 <Text style={styles.timeText}>{scenario.time}</Text>
               </View>
             </View>
+
+            {npc && (
+              <View style={styles.npcBadge}>
+                <Text style={styles.npcEmoji}>{npc.emoji}</Text>
+                <View>
+                  <Text style={styles.npcName}>{npc.name}</Text>
+                  <Text style={styles.npcTitle}>{npc.title}</Text>
+                </View>
+              </View>
+            )}
 
             <Text style={styles.title}>{scenario.title}</Text>
             <Text style={styles.description}>{scenario.description}</Text>
@@ -127,6 +140,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   timeText: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 2 },
+  npcBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  npcEmoji: { fontSize: 24 },
+  npcName: { ...FONTS.bodyBold, color: COLORS.text },
+  npcTitle: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 1 },
   title: {
     ...FONTS.heading,
     color: COLORS.text,
