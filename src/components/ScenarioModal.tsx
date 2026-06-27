@@ -29,12 +29,9 @@ const FACTOR_COLORS: Record<FactorTone, string> = {
   warn: '#B45309',
 };
 
-/** Only surface a tag when it actually matters; a steady choice shows nothing. */
+/** Only surface a tag when it actually matters; otherwise the choice shows nothing. */
 function riskLabel(risk: ChoiceRisk): string | null {
-  const parts: string[] = [];
-  if (risk.level === 'swingy') parts.push('Swingy');
-  if (risk.canBurnout) parts.push('\u26a0 Could end your run');
-  return parts.length ? parts.join(' \u00b7 ') : null;
+  return risk.canBurnout ? '\u26a0 Could end your run' : null;
 }
 
 export function ScenarioModal({
@@ -135,7 +132,7 @@ export function ScenarioModal({
                 {prepared
                   ? '\u2713 Prepared \u00b7 better odds this scenario'
                   : canPrepare
-                    ? `\ud83c\udfaf Prepare (\u2212${prepCost} energy) for better odds`
+                    ? `\ud83c\udfaf Prepare (-${prepCost} energy) for better odds`
                     : 'Too drained to prepare'}
               </Text>
             </Pressable>
