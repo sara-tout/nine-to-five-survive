@@ -36,6 +36,11 @@
       "bundler": "metro"
     },
     "plugins": [],
-    "extra": {}
+    "extra": {
+      "eas": {
+        "projectId": "9b3f90e4-a896-4fd5-8c1f-266001e5d26a"
+      }
+    },
+    "owner": "kurocat"
   }
 }
