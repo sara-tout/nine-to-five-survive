@@ -841,10 +841,10 @@ export const COHESION_OUTCOME_NARRATIVES: Record<string, Partial<RoleText>> = {
     "fast-learner": "You stayed quiet. Chad presented to his own email for six minutes. Someone finally said they could not see the deck. He called it a \"permissions issue.\" You have screenshots in your onboarding journal.",
     "craftsperson": "You stayed quiet. Chad presented to his own email for six minutes. Someone finally said they could not see the actual Figma deck. He called it a \"permissions issue.\" You have screenshots in your soul.",
     "truth-finder": "You stayed quiet. Chad presented to his own email for six minutes. Someone finally said they could not see the deck. He called it a \"permissions issue.\" You have receipts in your soul.",
-    "reliability-pro": "You stayed quiet. Chad presented to his own email for six minutes. Someone finally said they could not see the deck. He called it a \"prod permissions issue.\" You have screenshots in your soul."
+    "reliability-pro": "You stayed quiet. Chad presented to his own email for six minutes. Someone finally said they could not see the deck. He called it a \"permissions issue.\" You have screenshots in your soul."
   },
   "weather-small-talk:yes:0": {
-    "builder": "You added a comment about your VPN commute. Patricia smiled, but the meeting ran over anyway. You lost twenty minutes you needed for real coding work and still have no decision.",
+    "builder": "You added a comment about the rain on your commute. Patricia smiled, but the meeting ran over anyway. You lost twenty minutes you needed for real coding work and still have no decision.",
     "product-partner": "You added a comment about your commute. Patricia smiled, but the meeting ran over anyway. You lost twenty minutes you needed for real work and still have no scope decision.",
     "craftsperson": "You added a take on patio furniture. Patricia smiled, but the meeting ran over anyway. You lost twenty minutes you needed for real work and still have no decision.",
     "truth-finder": "You added an observation that the chat contained zero data. Patricia smiled, but the meeting ran over anyway. You lost twenty minutes you needed for real work and still have no data-driven decision.",

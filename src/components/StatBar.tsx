@@ -10,6 +10,8 @@ interface StatBarProps {
   bgColor: string;
   icon: string;
   showChange?: number;
+  /** Draws a tick on the track to mark a meaningful line (e.g. the depletion threshold). */
+  thresholdValue?: number;
 }
 
 export function StatBar({
@@ -20,6 +22,7 @@ export function StatBar({
   bgColor,
   icon,
   showChange,
+  thresholdValue,
 }: StatBarProps) {
   const widthAnim = useRef(new Animated.Value(0)).current;
   const changeOpacity = useRef(new Animated.Value(0)).current;
@@ -47,6 +50,10 @@ export function StatBar({
   }, [showChange]);
 
   const isLow = pct <= 25;
+  const thresholdPct =
+    thresholdValue !== undefined
+      ? Math.max(0, Math.min(100, (thresholdValue / maxValue) * 100))
+      : null;
 
   return (
     <View style={styles.container}>
@@ -81,6 +88,9 @@ export function StatBar({
             },
           ]}
         />
+        {thresholdPct !== null && (
+          <View style={[styles.threshold, { left: `${thresholdPct}%` }]} />
+        )}
       </View>
     </View>
   );
@@ -105,5 +115,13 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: RADIUS.full,
+  },
+  threshold: {
+    position: 'absolute',
+    top: -1,
+    bottom: -1,
+    width: 2,
+    backgroundColor: COLORS.text,
+    opacity: 0.35,
   },
 });

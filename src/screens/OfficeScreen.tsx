@@ -7,10 +7,18 @@ import { DPad } from '../components/DPad';
 import { ScenarioModal } from '../components/ScenarioModal';
 import { OutcomeModal } from '../components/OutcomeModal';
 import { OfficeCoachOverlay } from '../components/OfficeCoachOverlay';
+import { HelpModal } from '../components/HelpModal';
 import { useGame, TOTAL_DAYS, RAISE_THRESHOLD } from '../context/GameContext';
 import { getDayModifier } from '../data/dayModifiers';
-import { adjustOutcomeWeights, buildResolvedOutcome, ScenarioContext, PREP_ENERGY_COST } from '../data/scenarioContext';
-import { getChoiceRisk, getDepletionFactor, getReputationFactors } from '../data/strategy';
+import {
+  adjustOutcomeWeights,
+  buildResolvedOutcome,
+  ScenarioContext,
+  PREP_ENERGY_COST,
+  LOW_STAT_THRESHOLD,
+} from '../data/scenarioContext';
+import { getChoiceRisk, getDepletionFactor, getReputationFactors, Factor } from '../data/strategy';
+import { getPerk } from '../data/perks';
 import { pickOutcome } from '../data/scenarios';
 import { getNPC } from '../data/officeNPCs';
 import { getPathHint } from '../utils/officeNavigation';
@@ -20,6 +28,7 @@ import { hasSeenOfficeCoach, markOfficeCoachSeen } from '../storage/onboarding';
 export function OfficeScreen({ navigation }: any) {
   const { state, dispatch, currentScenario, playerProfile } = useGame();
   const [showCoach, setShowCoach] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const canSkipWalk = playerProfile.localRunsCompleted > 0;
 
   useEffect(() => {
@@ -148,6 +157,7 @@ export function OfficeScreen({ navigation }: any) {
       : currentScenario?.noLabel ?? '';
 
   const mood = getDayModifier(state.dayModifier);
+  const activePerk = getPerk(state.perk);
   const pathHint = getPathHint(state.playerPos, currentScenario?.location ?? null);
   const npc = currentScenario?.npcId ? getNPC(currentScenario.npcId) : undefined;
   const raiseGap = Math.max(0, RAISE_THRESHOLD - state.performance);
@@ -173,6 +183,17 @@ export function OfficeScreen({ navigation }: any) {
           <View style={styles.timeBadge}>
             <Text style={styles.timeText}>{currentScenario?.time ?? ''}</Text>
           </View>
+          <Pressable
+            onPress={() => {
+              hapticLight();
+              setShowHelp(true);
+            }}
+            hitSlop={8}
+            style={styles.helpBtn}
+            accessibilityLabel="How it works"
+          >
+            <Text style={styles.helpBtnText}>?</Text>
+          </Pressable>
         </View>
 
         {pathHint && !state.showScenarioModal && !state.showOutcomeModal && (
@@ -181,10 +202,24 @@ export function OfficeScreen({ navigation }: any) {
 
         <View style={styles.statsRow}>
           <View style={styles.statThird}>
-            <StatBar label="Energy" value={state.energy} color={COLORS.energy} bgColor={COLORS.energyBg} icon="⚡" />
+            <StatBar
+              label="Energy"
+              value={state.energy}
+              color={COLORS.energy}
+              bgColor={COLORS.energyBg}
+              icon="⚡"
+              thresholdValue={LOW_STAT_THRESHOLD}
+            />
           </View>
           <View style={styles.statThird}>
-            <StatBar label="Sanity" value={state.sanity} color={COLORS.sanity} bgColor={COLORS.sanityBg} icon="🧠" />
+            <StatBar
+              label="Sanity"
+              value={state.sanity}
+              color={COLORS.sanity}
+              bgColor={COLORS.sanityBg}
+              icon="🧠"
+              thresholdValue={LOW_STAT_THRESHOLD}
+            />
           </View>
           <View style={styles.statThird}>
             <StatBar
@@ -201,6 +236,11 @@ export function OfficeScreen({ navigation }: any) {
           <Text style={styles.moodChip}>
             {mood.emoji} {mood.label}
           </Text>
+          {activePerk && (
+            <Text style={styles.perkChip} numberOfLines={1}>
+              ⭐ {activePerk.name}
+            </Text>
+          )}
         </View>
 
         <View style={styles.raiseRow}>
@@ -249,6 +289,9 @@ export function OfficeScreen({ navigation }: any) {
           playerRole={state.playerRole}
           dayModifier={state.dayModifier}
           factors={[
+            ...(activePerk
+              ? [{ text: `Perk - ${activePerk.name}: ${activePerk.tagline}`, tone: 'good' } as Factor]
+              : []),
             ...getReputationFactors(state.flags),
             ...(getDepletionFactor(state.energy, state.sanity)
               ? [getDepletionFactor(state.energy, state.sanity)!]
@@ -275,6 +318,8 @@ export function OfficeScreen({ navigation }: any) {
       {showCoach && !state.showScenarioModal && !state.showOutcomeModal && (
         <OfficeCoachOverlay onDismiss={dismissCoach} />
       )}
+
+      {showHelp && <HelpModal onDismiss={() => setShowHelp(false)} />}
     </SafeAreaView>
   );
 }
@@ -327,12 +372,28 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   timeText: { ...FONTS.caption, color: COLORS.textSecondary },
+  helpBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginLeft: SPACING.sm,
+    backgroundColor: COLORS.bg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helpBtnText: { ...FONTS.bodyBold, color: COLORS.textSecondary, lineHeight: 18 },
   statsRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
   },
   statThird: { flex: 1 },
   moodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
     marginTop: SPACING.xs,
     marginBottom: SPACING.xs,
   },
@@ -341,6 +402,17 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     backgroundColor: COLORS.bg,
     alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    overflow: 'hidden',
+  },
+  perkChip: {
+    ...FONTS.caption,
+    color: COLORS.text,
+    backgroundColor: COLORS.bg,
+    alignSelf: 'flex-start',
+    maxWidth: '60%',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: RADIUS.full,

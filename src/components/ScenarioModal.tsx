@@ -107,6 +107,9 @@ export function ScenarioModal({
             {factors.length > 0 && (
               <View style={styles.factorsCard}>
                 <Text style={styles.factorsHeader}>Read the room</Text>
+                <Text style={styles.factorsSub}>
+                  Green is working for you, amber is a caution, red is working against you.
+                </Text>
                 {factors.map((factor, i) => (
                   <View key={i} style={styles.factorRow}>
                     <View style={[styles.factorDot, { backgroundColor: FACTOR_COLORS[factor.tone] }]} />
@@ -317,6 +320,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: '700',
     marginBottom: 2,
+  },
+  factorsSub: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    opacity: 0.8,
+    marginBottom: 4,
   },
   factorRow: {
     flexDirection: 'row',
