@@ -1,14 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, Animated, useWindowDimensions } from 'react-native';
 import { OFFICE_MAP, MAP_ROWS, MAP_COLS, TileType } from '../data/officeMap';
+import { ScenarioLocation } from '../data/scenarios';
 import { COLORS } from '../constants/theme';
 
-const TILE_SIZE = 42;
+const BASE_TILE_SIZE = 42;
 
 interface OfficeGridProps {
   playerPos: { x: number; y: number };
   playerEmoji: string;
-  activeScenarioId: string | null;
+  activeLocation: ScenarioLocation | null;
+  npcMarker?: string | null;
 }
 
 const TILE_COLORS: Record<TileType, string> = {
@@ -24,73 +26,101 @@ const TILE_COLORS: Record<TileType, string> = {
   [TileType.WINDOW]: '#A8C8D8',
 };
 
-function PulsingIndicator() {
-  const anim = useRef(new Animated.Value(1)).current;
+function ActiveTileGlow() {
+  const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 0.3, duration: 600, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.9, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.35, duration: 700, useNativeDriver: true }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, []);
+  }, [opacity]);
 
-  return (
-    <Animated.View style={[styles.indicator, { opacity: anim }]}>
-      <Text style={styles.indicatorText}>❗</Text>
-    </Animated.View>
-  );
+  return <Animated.View style={[styles.activeGlow, { opacity }]} pointerEvents="none" />;
 }
 
-export function OfficeGrid({ playerPos, playerEmoji, activeScenarioId }: OfficeGridProps) {
+function TileEmojiContent({
+  isActive,
+  locationEmoji,
+  npcEmoji,
+  tileSize,
+}: {
+  isActive: boolean;
+  locationEmoji: string | null;
+  npcEmoji: string | null;
+  tileSize: number;
+}) {
+  // One icon per tile: the NPC takes over the active tile, otherwise show the
+  // tile's own icon. The glow plus the header badge already identify the spot.
+  const emoji = isActive && npcEmoji ? npcEmoji : locationEmoji;
+  if (!emoji) return null;
+
+  return <Text style={[styles.emoji, { fontSize: tileSize * 0.52 }]}>{emoji}</Text>;
+}
+
+export function OfficeGrid({ playerPos, playerEmoji, activeLocation, npcMarker }: OfficeGridProps) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const tileSize = useMemo(() => {
+    const maxWidth = Math.max(280, windowWidth - 24);
+    const maxHeight = Math.max(220, windowHeight * 0.34);
+    const scale = Math.min(1, maxWidth / (MAP_COLS * BASE_TILE_SIZE), maxHeight / (MAP_ROWS * BASE_TILE_SIZE));
+    return BASE_TILE_SIZE * scale;
+  }, [windowWidth, windowHeight]);
+
   const playerAnim = useRef({
-    x: new Animated.Value(playerPos.x * TILE_SIZE),
-    y: new Animated.Value(playerPos.y * TILE_SIZE),
+    x: new Animated.Value(playerPos.x * tileSize),
+    y: new Animated.Value(playerPos.y * tileSize),
   }).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.spring(playerAnim.x, {
-        toValue: playerPos.x * TILE_SIZE,
+        toValue: playerPos.x * tileSize,
         friction: 10,
         tension: 120,
         useNativeDriver: true,
       }),
       Animated.spring(playerAnim.y, {
-        toValue: playerPos.y * TILE_SIZE,
+        toValue: playerPos.y * tileSize,
         friction: 10,
         tension: 120,
         useNativeDriver: true,
       }),
     ]).start();
-  }, [playerPos.x, playerPos.y]);
+  }, [playerPos.x, playerPos.y, playerAnim.x, playerAnim.y, tileSize]);
 
   return (
     <View style={styles.gridWrap}>
-      <View style={[styles.grid, { width: MAP_COLS * TILE_SIZE, height: MAP_ROWS * TILE_SIZE }]}>
+      <View style={[styles.grid, { width: MAP_COLS * tileSize, height: MAP_ROWS * tileSize }]}>
         {OFFICE_MAP.map((row, y) =>
           row.map((tile, x) => {
-            const isActive = tile.interactableScenarioId === activeScenarioId && activeScenarioId !== null;
+            const isActive = tile.interactableLocation === activeLocation && activeLocation !== null;
             return (
               <View
                 key={`${x}-${y}`}
                 style={[
                   styles.tile,
                   {
-                    left: x * TILE_SIZE,
-                    top: y * TILE_SIZE,
-                    width: TILE_SIZE,
-                    height: TILE_SIZE,
+                    left: x * tileSize,
+                    top: y * tileSize,
+                    width: tileSize,
+                    height: tileSize,
                     backgroundColor: TILE_COLORS[tile.type],
                   },
                   isActive && styles.activeTile,
                 ]}
               >
-                {tile.emoji && <Text style={styles.emoji}>{tile.emoji}</Text>}
-                {isActive && <PulsingIndicator />}
+                {isActive && <ActiveTileGlow />}
+                <TileEmojiContent
+                  isActive={isActive}
+                  locationEmoji={tile.emoji}
+                  npcEmoji={isActive ? (npcMarker ?? null) : null}
+                  tileSize={tileSize}
+                />
               </View>
             );
           }),
@@ -100,20 +130,20 @@ export function OfficeGrid({ playerPos, playerEmoji, activeScenarioId }: OfficeG
           style={[
             styles.player,
             {
-              width: TILE_SIZE,
-              height: TILE_SIZE,
+              width: tileSize,
+              height: tileSize,
               transform: [{ translateX: playerAnim.x }, { translateY: playerAnim.y }],
             },
           ]}
         >
-          <Text style={styles.playerEmoji}>{playerEmoji}</Text>
+          <Text style={[styles.playerEmoji, { fontSize: tileSize * 0.6 }]}>{playerEmoji}</Text>
         </Animated.View>
       </View>
     </View>
   );
 }
 
-export { TILE_SIZE };
+export { BASE_TILE_SIZE as TILE_SIZE };
 
 const styles = StyleSheet.create({
   gridWrap: {
@@ -130,22 +160,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.06)',
+    overflow: 'visible',
   },
-  emoji: {
-    fontSize: TILE_SIZE * 0.55,
-  },
+  emoji: {},
   activeTile: {
     backgroundColor: '#FFF9E6',
+    borderColor: COLORS.accent,
+    borderWidth: 2,
+    zIndex: 1,
+  },
+  activeGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 4,
+    borderWidth: 2,
     borderColor: '#FFD700',
-    borderWidth: 1.5,
-  },
-  indicator: {
-    position: 'absolute',
-    top: -6,
-    right: -2,
-  },
-  indicatorText: {
-    fontSize: 14,
+    margin: -3,
   },
   player: {
     position: 'absolute',
@@ -155,7 +184,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
-  playerEmoji: {
-    fontSize: TILE_SIZE * 0.6,
-  },
+  playerEmoji: {},
 });

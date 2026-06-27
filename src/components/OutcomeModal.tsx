@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Outcome } from '../data/scenarios';
+import { getOutcomeTone } from '../utils/outcomeTone';
 
 interface OutcomeModalProps {
   outcome: Outcome;
@@ -39,40 +41,78 @@ const pillStyles = StyleSheet.create({
 });
 
 export function OutcomeModal({ outcome, choiceLabel, onContinue }: OutcomeModalProps) {
-  const totalImpact = outcome.energy + outcome.sanity + outcome.performance + outcome.raiseProgress;
-  const isGood = totalImpact > 0;
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const maxModalHeight = Math.min(windowHeight * 0.92, windowHeight - insets.top - 16);
+  const maxScrollHeight = Math.max(180, maxModalHeight - 120);
+
+  const { tone, badge, emoji } = getOutcomeTone(outcome);
+  const isPositiveTone = tone === 'great' || tone === 'good';
+  const isMixedTone = tone === 'mixed';
 
   return (
     <View style={styles.overlay}>
       <View style={styles.backdrop} />
       <View style={styles.modalPositioner}>
-        <View style={styles.modal}>
+        <View style={[styles.modal, { maxHeight: maxModalHeight, paddingBottom: SPACING.lg + insets.bottom }]}>
           <View style={styles.handleBar} />
 
-          <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={[styles.scrollArea, { maxHeight: maxScrollHeight }]}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.headerRow}>
-              <View style={[styles.badge, { backgroundColor: isGood ? COLORS.successBg : COLORS.dangerBg }]}>
-                <Text style={[styles.badgeText, { color: isGood ? COLORS.success : COLORS.danger }]}>
-                  {isGood ? 'Not bad!' : 'Oof.'}
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: isPositiveTone
+                      ? COLORS.successBg
+                      : isMixedTone
+                        ? COLORS.accentLight
+                        : COLORS.dangerBg,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    {
+                      color: isPositiveTone
+                        ? COLORS.success
+                        : isMixedTone
+                          ? COLORS.accent
+                          : COLORS.danger,
+                    },
+                  ]}
+                >
+                  {badge}
                 </Text>
               </View>
               <Text style={styles.choiceLabelText}>You chose: {choiceLabel}</Text>
             </View>
 
             <View style={styles.emojiWrap}>
-              <Text style={styles.emoji}>{isGood ? '😎' : '😬'}</Text>
+              <Text style={styles.emoji}>{emoji}</Text>
             </View>
 
             <View style={styles.narrativeBox}>
               <Text style={styles.narrative}>{outcome.narrative}</Text>
             </View>
 
+            {outcome.contextNote ? (
+              <View style={styles.contextBox}>
+                <Text style={styles.contextTitle}>Office gossip</Text>
+                <Text style={styles.contextText}>{outcome.contextNote}</Text>
+              </View>
+            ) : null}
+
             <Text style={styles.impactTitle}>Impact</Text>
             <View style={styles.pillRow}>
               <StatPill label="Energy" value={outcome.energy} icon="⚡" />
               <StatPill label="Sanity" value={outcome.sanity} icon="🧠" />
-              <StatPill label="Performance" value={outcome.performance} icon="📊" />
-              <StatPill label="Raise" value={outcome.raiseProgress} icon="📈" />
+              <StatPill label="Performance" value={outcome.performance + outcome.raiseProgress} icon="📊" />
             </View>
           </ScrollView>
 
@@ -120,8 +160,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: RADIUS.xl,
     paddingTop: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    maxHeight: '80%',
     zIndex: 10000,
   },
   handleBar: {
@@ -135,6 +173,9 @@ const styles = StyleSheet.create({
   scrollArea: {
     flexShrink: 1,
     marginBottom: SPACING.md,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xs,
   },
   headerRow: {
     flexDirection: 'row',
@@ -171,6 +212,25 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     lineHeight: 24,
     textAlign: 'center',
+  },
+  contextBox: {
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  contextTitle: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    fontWeight: '700',
+    marginBottom: SPACING.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  contextText: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
   },
   impactTitle: {
     ...FONTS.subheading,

@@ -41,11 +41,15 @@ export function DPad({ onMove, onInteract, canInteract }: DPadProps) {
       </View>
 
       <Pressable
-        onPress={onInteract}
+        onPress={() => {
+          if (canInteract) onInteract();
+        }}
+        disabled={!canInteract}
         style={({ pressed }) => [
           styles.interactBtn,
           canInteract && styles.interactBtnActive,
           pressed && canInteract && styles.interactBtnPressed,
+          !canInteract && styles.interactBtnDisabled,
         ]}
       >
         <Text style={styles.interactIcon}>💬</Text>
@@ -111,7 +115,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 100,
-    opacity: 0.5,
+  },
+  interactBtnDisabled: {
+    opacity: 0.4,
   },
   interactBtnActive: {
     backgroundColor: COLORS.accentLight,

@@ -2,73 +2,24 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Button } from '../components/Button';
+import { CHARACTERS } from '../data/characters';
 import { useGame } from '../context/GameContext';
 
-interface CharacterDef {
-  emoji: string;
-  name: string;
-  title: string;
-  bio: string;
-}
-
-const CHARACTERS: CharacterDef[] = [
-  {
-    emoji: '👩‍💻',
-    name: 'Carla',
-    title: 'The Builder',
-    bio: 'Ships clean code, protects deep work, and mentors without ego. The person everyone wants on their project.',
-  },
-  {
-    emoji: '👩‍💼',
-    name: 'Ming',
-    title: 'The Product Partner',
-    bio: 'Cuts scope creep, shields the team, and actually understands the work. Makes hard calls so others can focus.',
-  },
-  {
-    emoji: '👨‍💼',
-    name: 'Alan',
-    title: 'The Fast Learner',
-    bio: 'New to the role but asks the right questions, takes notes, and levels up every week. Hungry without being chaotic.',
-  },
-  {
-    emoji: '👩‍🎨',
-    name: 'Julia',
-    title: 'The Craftsperson',
-    bio: 'Fights for users, sweats the details, and makes products feel inevitable. Design with a backbone.',
-  },
-  {
-    emoji: '👩‍🔬',
-    name: 'Dr. Ursula',
-    title: 'The Truth Finder',
-    bio: 'Turns noise into signal. Brings receipts, not vibes. The room gets quieter when she presents the data.',
-  },
-  {
-    emoji: '👷',
-    name: 'Hong',
-    title: 'The Reliability Pro',
-    bio: 'Keeps systems running so everyone else can sleep. Fixes fires before they become headlines.',
-  },
-  {
-    emoji: '👩‍🏫',
-    name: 'Kevin',
-    title: 'The Mentor',
-    bio: 'Has seen every reorg and survived them all. The team calls him Cookie. Lifts others up, shares credit, and still ships.',
-  },
-  {
-    emoji: '👴',
-    name: 'Jido',
-    title: 'The Professor',
-    bio: 'A mathematician who should have retired years ago. Still shows up because the problems are interesting, not the paycheck.',
-  },
-];
-
 export function CharacterSelectScreen({ navigation }: any) {
-  const { dispatch } = useGame();
+  const { dispatch, startGame, unplayedScenarioCount, unplayedMoodCount } = useGame();
   const [selected, setSelected] = useState(0);
+  const [starting, setStarting] = useState(false);
 
-  const handleConfirm = () => {
-    dispatch({ type: 'SELECT_CHARACTER', emoji: CHARACTERS[selected].emoji });
-    dispatch({ type: 'START_GAME' });
+  const handleConfirm = async () => {
+    if (starting) return;
+    setStarting(true);
+    dispatch({
+      type: 'SELECT_CHARACTER',
+      role: CHARACTERS[selected].role,
+      emoji: CHARACTERS[selected].emoji,
+    });
+    await startGame();
+    setStarting(false);
     navigation.replace('Office');
   };
 
@@ -76,46 +27,60 @@ export function CharacterSelectScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Choose Your Fighter</Text>
-        <Text style={styles.subtitle}>Who are you today?</Text>
-      </View>
-
       <ScrollView
-        contentContainerStyle={styles.grid}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {CHARACTERS.map((c, i) => (
-          <Pressable
-            key={c.name}
-            onPress={() => setSelected(i)}
-            style={[
-              styles.card,
-              selected === i && styles.cardSelected,
-            ]}
-          >
-            <Text style={styles.cardEmoji}>{c.emoji}</Text>
-            <Text style={[styles.cardName, selected === i && styles.cardNameSelected]}>
-              {c.name}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <View style={styles.bioSection}>
-        <View style={styles.bioHeader}>
-          <Text style={styles.bioEmoji}>{char.emoji}</Text>
-          <View>
-            <Text style={styles.bioName}>{char.name}</Text>
-            <Text style={styles.bioTitle}>{char.title}</Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.title}>Choose Your Fighter</Text>
+          <Text style={styles.subtitle}>Who are you today? Scenarios adapt lightly to your role.</Text>
         </View>
-        <Text style={styles.bioText}>{char.bio}</Text>
-      </View>
 
-      <View style={styles.buttonArea}>
-        <Button title={`Play as ${char.name}`} onPress={handleConfirm} icon={char.emoji} />
-      </View>
+        <View style={styles.grid}>
+          {CHARACTERS.map((c, i) => (
+            <Pressable
+              key={c.name}
+              onPress={() => setSelected(i)}
+              style={[
+                styles.card,
+                selected === i && styles.cardSelected,
+              ]}
+            >
+              <Text style={styles.cardEmoji}>{c.emoji}</Text>
+              <Text style={[styles.cardName, selected === i && styles.cardNameSelected]}>
+                {c.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.bioSection}>
+          <View style={styles.bioHeader}>
+            <Text style={styles.bioEmoji}>{char.emoji}</Text>
+            <View>
+              <Text style={styles.bioName}>{char.name}</Text>
+              <Text style={styles.bioTitle}>{char.title}</Text>
+            </View>
+          </View>
+          <Text style={styles.bioText}>{char.bio}</Text>
+        </View>
+
+        <View style={styles.buttonArea}>
+          {(unplayedScenarioCount > 0 || unplayedMoodCount > 0) && (
+            <Text style={styles.poolHint}>
+              {Math.min(unplayedScenarioCount, 5)} fresh scenario{Math.min(unplayedScenarioCount, 5) === 1 ? '' : 's'}
+              {' · '}
+              {Math.min(unplayedMoodCount, 5)} fresh office climate{Math.min(unplayedMoodCount, 5) === 1 ? '' : 's'} queued
+            </Text>
+          )}
+          <Button
+            title={starting ? 'Loading week...' : `Play as ${char.name}`}
+            onPress={handleConfirm}
+            icon={char.emoji}
+          />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -124,6 +89,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingBottom: SPACING.xxl,
   },
   header: {
     paddingHorizontal: SPACING.lg,
@@ -139,6 +108,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...FONTS.body,
     color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   grid: {
     flexDirection: 'row',
@@ -176,6 +146,7 @@ const styles = StyleSheet.create({
   },
   bioSection: {
     marginHorizontal: SPACING.lg,
+    marginTop: SPACING.sm,
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
@@ -208,5 +179,11 @@ const styles = StyleSheet.create({
   buttonArea: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
+  },
+  poolHint: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
   },
 });

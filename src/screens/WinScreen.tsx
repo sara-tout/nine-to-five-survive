@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
-import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { useGame } from '../context/GameContext';
+import { EndRunScreenLayout } from '../components/EndRunScreenLayout';
+import { RewardUnlockModal } from '../components/RewardUnlockModal';
+import { useGame, RAISE_THRESHOLD } from '../context/GameContext';
+import { calculateRunGrade } from '../utils/runGrade';
+import { startNewRun } from '../utils/replayNavigation';
 
 const VICTORY_TITLES = [
   'The Art of Saying No',
@@ -12,7 +15,9 @@ const VICTORY_TITLES = [
 ];
 
 export function WinScreen({ navigation }: any) {
-  const { state, dispatch } = useGame();
+  const { state, celebrationQueue, streakData, streakNotice, lastRunSyncMessage, dismissCelebration, resetAfterRun } =
+    useGame();
+  const activeCelebration = celebrationQueue[0] ?? null;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const confettiAnims = useRef(
     Array.from({ length: 6 }, () => ({
@@ -52,23 +57,42 @@ export function WinScreen({ navigation }: any) {
   );
 
   const handleRestart = () => {
-    dispatch({ type: 'RESET' });
+    startNewRun(navigation, resetAfterRun);
+  };
+
+  const handleHome = () => {
+    resetAfterRun();
     navigation.replace('Home');
   };
 
-  const getGrade = () => {
-    const total = state.energy + state.sanity + state.performance;
-    if (total >= 200) return { grade: 'S', color: '#FFD700', label: 'Legendary Office Survivor' };
-    if (total >= 150) return { grade: 'A', color: COLORS.success, label: 'Senior Survivor' };
-    if (total >= 100) return { grade: 'B', color: COLORS.accent, label: 'Mid-Level Survivor' };
-    return { grade: 'C', color: COLORS.energy, label: 'Junior Survivor (but hey, you made it)' };
+  const handleLeaderboard = () => {
+    resetAfterRun();
+    navigation.reset({
+      index: 1,
+      routes: [{ name: 'Home' }, { name: 'Leaderboard' }],
+    });
   };
 
-  const grade = getGrade();
+  const grade = calculateRunGrade({
+    energy: state.energy,
+    sanity: state.sanity,
+    performance: state.performance,
+    currentStreak: streakData.currentStreak,
+    perksEarned: streakData.earnedRewards.length,
+    won: true,
+  });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <View style={styles.wrapper}>
+      <EndRunScreenLayout
+        contentContainerStyle={styles.scroll}
+        primaryTitle="Play Again"
+        primaryIcon="🔄"
+        onPrimary={handleRestart}
+        onLeaderboard={handleLeaderboard}
+        onHome={handleHome}
+        footerHidden={!!activeCelebration}
+      >
         <Animated.View style={{ opacity: fadeAnim }}>
           <View style={styles.confettiRow}>
             {confettiAnims.map((anim, i) => (
@@ -105,9 +129,11 @@ export function WinScreen({ navigation }: any) {
           <Card style={styles.messageCard}>
             <Text style={styles.message}>
               Five days of navigating office politics, dodging unnecessary meetings, and protecting
-              your sanity—and it paid off. You played the game smarter, not harder. Your bank
+              your sanity, and it paid off. You played the game smarter, not harder. Your bank
               account thanks you. Your therapist is cautiously optimistic.
             </Text>
+            {streakNotice && <Text style={styles.streakNotice}>{streakNotice}</Text>}
+            {lastRunSyncMessage && <Text style={styles.syncNotice}>{lastRunSyncMessage}</Text>}
           </Card>
 
           <View style={styles.gradeWrap}>
@@ -115,6 +141,7 @@ export function WinScreen({ navigation }: any) {
               <Text style={[styles.gradeText, { color: grade.color }]}>{grade.grade}</Text>
             </View>
             <Text style={styles.gradeLabel}>{grade.label}</Text>
+            {grade.bonusNote && <Text style={styles.gradeBonus}>{grade.bonusNote}</Text>}
           </View>
 
           <Card style={styles.statsCard}>
@@ -129,40 +156,35 @@ export function WinScreen({ navigation }: any) {
               <Text style={styles.statLabel}>Sanity</Text>
               <Text style={styles.statValue}>{state.sanity}/100</Text>
             </View>
-            <View style={styles.statRow}>
+            <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.statEmoji}>📊</Text>
               <Text style={styles.statLabel}>Performance</Text>
-              <Text style={styles.statValue}>{state.performance}/100</Text>
-            </View>
-            <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.statEmoji}>📈</Text>
-              <Text style={styles.statLabel}>Raise Progress</Text>
               <Text style={[styles.statValue, { color: COLORS.success }]}>
-                {state.raiseProgress}/50 ✓
+                {state.performance}/{RAISE_THRESHOLD} needed ✓
               </Text>
             </View>
           </Card>
 
-          <Button
-            title="Play Again"
-            onPress={handleRestart}
-            icon="🔄"
-            style={styles.restartBtn}
-          />
           <Text style={styles.hint}>
             Can you get an S rank? Different choices, different outcomes...
           </Text>
         </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+      </EndRunScreenLayout>
+
+      {activeCelebration && (
+        <RewardUnlockModal
+          reward={activeCelebration}
+          streakDays={streakData.currentStreak}
+          onDismiss={dismissCelebration}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  wrapper: { flex: 1, position: 'relative' },
   scroll: {
-    padding: SPACING.lg,
-    paddingBottom: SPACING.xxl,
     alignItems: 'center',
   },
   confettiRow: {
@@ -206,6 +228,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
   },
+  streakNotice: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    fontWeight: '600',
+  },
+  syncNotice: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+  },
   gradeWrap: {
     alignItems: 'center',
     marginBottom: SPACING.lg,
@@ -222,6 +258,7 @@ const styles = StyleSheet.create({
   },
   gradeText: { fontSize: 32, fontWeight: '800' },
   gradeLabel: { ...FONTS.caption, color: COLORS.textSecondary },
+  gradeBonus: { ...FONTS.small, color: COLORS.accent, marginTop: SPACING.xs, textAlign: 'center' },
   statsCard: { marginBottom: SPACING.lg, width: '100%' },
   statsTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.md },
   statRow: {
@@ -234,7 +271,6 @@ const styles = StyleSheet.create({
   statEmoji: { fontSize: 16, marginRight: SPACING.sm },
   statLabel: { ...FONTS.body, color: COLORS.textSecondary, flex: 1 },
   statValue: { ...FONTS.bodyBold, color: COLORS.text },
-  restartBtn: { width: '100%' },
   hint: {
     ...FONTS.small,
     color: COLORS.textMuted,

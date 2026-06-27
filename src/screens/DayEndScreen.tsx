@@ -8,7 +8,7 @@ import { useGame, TOTAL_DAYS, RAISE_THRESHOLD } from '../context/GameContext';
 
 const DAY_END_QUIPS = [
   'You survived another day. Your houseplant is proud.',
-  'Clock out. Touch grass. Forget Slack exists.',
+  'Clock out. Touch grass. Forget work chat exists.',
   'Another day, another dollar (before taxes).',
   'You made it. Time for a well-deserved existential crisis.',
   'Tomorrow is another chance to pretend you read the standup notes.',
@@ -28,11 +28,8 @@ export function DayEndScreen({ navigation }: any) {
 
   const handleNext = () => {
     if (isLastDay) {
-      if (state.raiseProgress >= RAISE_THRESHOLD) {
-        navigation.replace('Win');
-      } else {
-        navigation.replace('GameOver');
-      }
+      dispatch({ type: 'FINISH_RUN' });
+      navigation.replace('RunSummary');
     } else {
       dispatch({ type: 'NEXT_DAY' });
       navigation.replace('Office');
@@ -74,7 +71,9 @@ export function DayEndScreen({ navigation }: any) {
               color={COLORS.performance}
               bgColor={COLORS.performanceBg}
               icon="📊"
-              showChange={lastResult?.outcome.performance}
+              showChange={
+                lastResult ? lastResult.outcome.performance + lastResult.outcome.raiseProgress : undefined
+              }
             />
 
             <View style={styles.raiseSummary}>
@@ -83,12 +82,12 @@ export function DayEndScreen({ navigation }: any) {
                 <View
                   style={[
                     styles.raiseFill,
-                    { width: `${Math.min(100, (state.raiseProgress / RAISE_THRESHOLD) * 100)}%` },
+                    { width: `${Math.min(100, (state.performance / RAISE_THRESHOLD) * 100)}%` },
                   ]}
                 />
               </View>
               <Text style={styles.raisePct}>
-                {state.raiseProgress}/{RAISE_THRESHOLD}
+                {state.performance}/{RAISE_THRESHOLD}
               </Text>
             </View>
           </Card>
@@ -124,7 +123,7 @@ export function DayEndScreen({ navigation }: any) {
             <View style={styles.warningBanner}>
               <Text style={styles.warningIcon}>🧠</Text>
               <Text style={styles.warningText}>
-                Sanity is hanging by a thread. Maybe skip the Slack drama tomorrow.
+                Sanity is hanging by a thread. Maybe skip the chat drama tomorrow.
               </Text>
             </View>
           )}
@@ -135,6 +134,12 @@ export function DayEndScreen({ navigation }: any) {
             icon={isLastDay ? '🏁' : '☀️'}
             style={styles.nextBtn}
           />
+
+          {state.performance < RAISE_THRESHOLD && (
+            <Text style={styles.raiseHint}>
+              Performance needs to reach {RAISE_THRESHOLD} by day {TOTAL_DAYS} to survive calibration. {RAISE_THRESHOLD - state.performance} to go.
+            </Text>
+          )}
 
           {!isLastDay && (
             <Text style={styles.daysLeft}>
@@ -195,6 +200,13 @@ const styles = StyleSheet.create({
   warningIcon: { fontSize: 20, marginRight: SPACING.sm },
   warningText: { ...FONTS.caption, color: COLORS.danger, flex: 1 },
   nextBtn: { width: '100%', marginTop: SPACING.sm },
+  raiseHint: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+    lineHeight: 20,
+  },
   daysLeft: {
     ...FONTS.small,
     color: COLORS.textMuted,

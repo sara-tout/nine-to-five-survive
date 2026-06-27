@@ -1,3 +1,5 @@
+import { ScenarioLocation } from './scenarios';
+
 export enum TileType {
   FLOOR = 'floor',
   WALL = 'wall',
@@ -15,7 +17,7 @@ export interface TileDef {
   type: TileType;
   emoji: string | null;
   solid: boolean;
-  interactableScenarioId?: string;
+  interactableLocation?: ScenarioLocation;
 }
 
 const F: TileDef = { type: TileType.FLOOR, emoji: null, solid: false };
@@ -24,11 +26,11 @@ const WN: TileDef = { type: TileType.WINDOW, emoji: '🪟', solid: true };
 const P: TileDef = { type: TileType.PLANT, emoji: '🪴', solid: true };
 const CH: TileDef = { type: TileType.CHAIR, emoji: '🪑', solid: true };
 
-const D1: TileDef = { type: TileType.DESK, emoji: '💻', solid: true, interactableScenarioId: 'late-night-task' };
-const CAL: TileDef = { type: TileType.CALENDAR, emoji: '📅', solid: true, interactableScenarioId: 'meeting-marathon' };
-const FR: TileDef = { type: TileType.FRIDGE, emoji: '🍱', solid: true, interactableScenarioId: 'lunch-steal' };
-const D2: TileDef = { type: TileType.DESK, emoji: '💻', solid: true, interactableScenarioId: 'slack-fire' };
-const MIC: TileDef = { type: TileType.MIC, emoji: '🎤', solid: true, interactableScenarioId: 'demo-day' };
+const D1: TileDef = { type: TileType.DESK, emoji: '💻', solid: true, interactableLocation: 'desk' };
+const CAL: TileDef = { type: TileType.CALENDAR, emoji: '📅', solid: true, interactableLocation: 'meeting-room' };
+const FR: TileDef = { type: TileType.FRIDGE, emoji: '🍱', solid: true, interactableLocation: 'kitchen' };
+const D2: TileDef = { type: TileType.DESK, emoji: '💻', solid: true, interactableLocation: 'coworker-desk' };
+const MIC: TileDef = { type: TileType.MIC, emoji: '🎤', solid: true, interactableLocation: 'presentation' };
 
 const DK: TileDef = { type: TileType.DESK, emoji: '🖥️', solid: true };
 const CF: TileDef = { type: TileType.COFFEE, emoji: '☕', solid: true };
@@ -68,8 +70,10 @@ export function isWalkable(x: number, y: number): boolean {
 export function getAdjacentInteractable(
   px: number,
   py: number,
-  activeScenarioId: string | null,
+  activeLocation: ScenarioLocation | null,
 ): { x: number; y: number; tile: TileDef } | null {
+  if (!activeLocation) return null;
+
   const dirs = [
     { dx: 0, dy: -1 },
     { dx: 0, dy: 1 },
@@ -78,19 +82,8 @@ export function getAdjacentInteractable(
   ];
   for (const { dx, dy } of dirs) {
     const tile = getTile(px + dx, py + dy);
-    if (tile?.interactableScenarioId && tile.interactableScenarioId === activeScenarioId) {
+    if (tile?.interactableLocation && tile.interactableLocation === activeLocation) {
       return { x: px + dx, y: py + dy, tile };
-    }
-  }
-  return null;
-}
-
-export function findScenarioPosition(scenarioId: string): { x: number; y: number } | null {
-  for (let y = 0; y < MAP_ROWS; y++) {
-    for (let x = 0; x < MAP_COLS; x++) {
-      if (OFFICE_MAP[y][x].interactableScenarioId === scenarioId) {
-        return { x, y };
-      }
     }
   }
   return null;

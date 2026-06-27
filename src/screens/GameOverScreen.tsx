@@ -1,21 +1,23 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
-import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { useGame } from '../context/GameContext';
+import { EndRunScreenLayout } from '../components/EndRunScreenLayout';
+import { RewardUnlockModal } from '../components/RewardUnlockModal';
+import { useGame, RAISE_THRESHOLD } from '../context/GameContext';
+import { startNewRun } from '../utils/replayNavigation';
 
 const BURNOUT_MESSAGES = [
   {
     title: 'Total Burnout',
     message:
-      "You said yes to everything and now you're staring at your monitor like it personally wronged you. Your energy is gone. Your will to live-code is depleted.",
-    tip: 'Saying no isn\'t career suicide—it\'s self-preservation.',
+      "You said yes to everything and now you're staring at your monitor like it personally wronged you. Your energy is gone. Your will to work is depleted.",
+    tip: 'Saying no isn\'t career suicide. It\'s self-preservation.',
   },
   {
     title: 'Sanity: 404 Not Found',
     message:
-      "Between the passive-aggressive Slack messages and the meeting that could've been an email, your brain has officially filed for divorce.",
+      "Between the passive-aggressive chat messages and the meeting that could've been an email, your brain has officially filed for divorce.",
     tip: 'Protect your mental bandwidth like it\'s production data.',
   },
   {
@@ -27,12 +29,21 @@ const BURNOUT_MESSAGES = [
 ];
 
 export function GameOverScreen({ navigation }: any) {
-  const { state, dispatch } = useGame();
+  const { state, celebrationQueue, streakData, streakNotice, lastRunSyncMessage, dismissCelebration, resetAfterRun } =
+    useGame();
+  const activeCelebration = celebrationQueue[0] ?? null;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  const isBurnout = state.energy <= 0 || state.sanity <= 0;
-  const msgIndex = state.energy <= 0 ? 0 : state.sanity <= 0 ? 1 : 2;
+  const isStatBurnout = state.gameStatus === 'stat-burnout' || state.energy <= 0 || state.sanity <= 0;
+  const msgIndex =
+    state.gameStatus === 'missed-raise'
+      ? 2
+      : state.energy <= 0
+        ? 0
+        : state.sanity <= 0
+          ? 1
+          : 2;
   const msg = BURNOUT_MESSAGES[msgIndex];
 
   useEffect(() => {
@@ -49,18 +60,38 @@ export function GameOverScreen({ navigation }: any) {
   }, []);
 
   const handleRestart = () => {
-    dispatch({ type: 'RESET' });
+    startNewRun(navigation, resetAfterRun);
+  };
+
+  const handleHome = () => {
+    resetAfterRun();
     navigation.replace('Home');
   };
 
+  const handleLeaderboard = () => {
+    resetAfterRun();
+    navigation.reset({
+      index: 1,
+      routes: [{ name: 'Home' }, { name: 'Leaderboard' }],
+    });
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <View style={styles.wrapper}>
+      <EndRunScreenLayout
+        contentContainerStyle={styles.scroll}
+        primaryTitle="Play Again"
+        primaryIcon="🔄"
+        onPrimary={handleRestart}
+        onLeaderboard={handleLeaderboard}
+        onHome={handleHome}
+        footerHidden={!!activeCelebration}
+      >
         <Animated.View style={{ opacity: fadeAnim }}>
           <Animated.View
             style={[styles.iconWrap, { transform: [{ translateX: shakeAnim }] }]}
           >
-            <Text style={styles.icon}>{isBurnout ? '🔥' : '📉'}</Text>
+            <Text style={styles.icon}>{isStatBurnout ? '🔥' : '📉'}</Text>
           </Animated.View>
 
           <Text style={styles.title}>{msg.title}</Text>
@@ -68,6 +99,8 @@ export function GameOverScreen({ navigation }: any) {
 
           <Card style={styles.messageCard}>
             <Text style={styles.message}>{msg.message}</Text>
+            {streakNotice && <Text style={styles.streakNotice}>{streakNotice}</Text>}
+            {lastRunSyncMessage && <Text style={styles.syncNotice}>{lastRunSyncMessage}</Text>}
           </Card>
 
           <View style={styles.tipBanner}>
@@ -94,12 +127,7 @@ export function GameOverScreen({ navigation }: any) {
             <View style={styles.statRow}>
               <Text style={styles.statIcon}>📊</Text>
               <Text style={styles.statLabel}>Performance</Text>
-              <Text style={styles.statValue}>{state.performance}</Text>
-            </View>
-            <View style={styles.statRow}>
-              <Text style={styles.statIcon}>📈</Text>
-              <Text style={styles.statLabel}>Raise Progress</Text>
-              <Text style={styles.statValue}>{state.raiseProgress}/50</Text>
+              <Text style={styles.statValue}>{state.performance}/{RAISE_THRESHOLD} needed</Text>
             </View>
             <View style={styles.statRow}>
               <Text style={styles.statIcon}>📅</Text>
@@ -108,24 +136,24 @@ export function GameOverScreen({ navigation }: any) {
             </View>
           </Card>
 
-          <Button
-            title="Try Again"
-            onPress={handleRestart}
-            icon="🔄"
-            style={styles.restartBtn}
-          />
           <Text style={styles.hint}>Every expert was once a burnout survivor.</Text>
         </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+      </EndRunScreenLayout>
+
+      {activeCelebration && (
+        <RewardUnlockModal
+          reward={activeCelebration}
+          streakDays={streakData.currentStreak}
+          onDismiss={dismissCelebration}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  wrapper: { flex: 1, position: 'relative' },
   scroll: {
-    padding: SPACING.lg,
-    paddingBottom: SPACING.xxl,
     alignItems: 'center',
   },
   iconWrap: {
@@ -161,6 +189,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
   },
+  streakNotice: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    fontWeight: '600',
+  },
+  syncNotice: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+  },
   tipBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,7 +226,6 @@ const styles = StyleSheet.create({
   statIcon: { fontSize: 16, marginRight: SPACING.sm },
   statLabel: { ...FONTS.body, color: COLORS.textSecondary, flex: 1 },
   statValue: { ...FONTS.bodyBold, color: COLORS.text },
-  restartBtn: { width: '100%' },
   hint: {
     ...FONTS.small,
     color: COLORS.textMuted,

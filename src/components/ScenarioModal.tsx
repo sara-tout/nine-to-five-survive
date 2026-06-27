@@ -1,25 +1,44 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
+import { CharacterRole } from '../data/characters';
+import { DayModifierId, getDayModifier, getMoodScenarioHint } from '../data/dayModifiers';
 import { Scenario } from '../data/scenarios';
 import { getNPC } from '../data/officeNPCs';
+import { getScenarioChoiceLabels, getScenarioDescription } from '../data/scenarioText';
 
 interface ScenarioModalProps {
   scenario: Scenario;
+  playerRole: CharacterRole;
+  dayModifier: DayModifierId;
   onChoose: (choice: 'yes' | 'no') => void;
 }
 
-export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
+export function ScenarioModal({ scenario, playerRole, dayModifier, onChoose }: ScenarioModalProps) {
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const maxModalHeight = Math.min(windowHeight * 0.88, windowHeight - insets.top - 24);
+  const maxScrollHeight = Math.max(160, maxModalHeight - 180);
+
   const npc = scenario.npcId ? getNPC(scenario.npcId) : undefined;
+  const description = getScenarioDescription(scenario, playerRole);
+  const choiceLabels = getScenarioChoiceLabels(scenario, playerRole);
+  const mood = getDayModifier(dayModifier);
+  const moodHint = getMoodScenarioHint(dayModifier, scenario.id);
 
   return (
     <View style={styles.overlay}>
       <View style={styles.backdrop} />
       <View style={styles.modalPositioner}>
-        <View style={styles.modal}>
+        <View style={[styles.modal, { maxHeight: maxModalHeight, paddingBottom: SPACING.lg + insets.bottom }]}>
           <View style={styles.handleBar} />
 
-          <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={[styles.scrollArea, { maxHeight: maxScrollHeight }]}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.header}>
               <View style={styles.iconWrap}>
                 <Text style={styles.icon}>{scenario.icon}</Text>
@@ -27,6 +46,15 @@ export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
               <View>
                 <Text style={styles.locationLabel}>{scenario.locationLabel}</Text>
                 <Text style={styles.timeText}>{scenario.time}</Text>
+              </View>
+            </View>
+
+            <View style={[styles.moodBadge, moodHint && styles.moodBadgeActive]}>
+              <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+              <View style={styles.moodTextWrap}>
+                <Text style={styles.moodLabel}>Office mood: {mood.label}</Text>
+                <Text style={styles.moodDescription}>{mood.description}</Text>
+                {moodHint && <Text style={styles.moodEffect}>Today: {moodHint}</Text>}
               </View>
             </View>
 
@@ -41,7 +69,7 @@ export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
             )}
 
             <Text style={styles.title}>{scenario.title}</Text>
-            <Text style={styles.description}>{scenario.description}</Text>
+            <Text style={styles.description}>{description}</Text>
           </ScrollView>
 
           <View style={styles.buttonsArea}>
@@ -54,7 +82,7 @@ export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
               ]}
             >
               <Text style={styles.btnEmoji}>👍</Text>
-              <Text style={styles.yesBtnText}>{scenario.yesLabel}</Text>
+              <Text style={styles.yesBtnText}>{choiceLabels.yes}</Text>
             </Pressable>
 
             <Pressable
@@ -66,7 +94,7 @@ export function ScenarioModal({ scenario, onChoose }: ScenarioModalProps) {
               ]}
             >
               <Text style={styles.btnEmoji}>✋</Text>
-              <Text style={styles.noBtnText}>{scenario.noLabel}</Text>
+              <Text style={styles.noBtnText}>{choiceLabels.no}</Text>
             </Pressable>
           </View>
         </View>
@@ -102,8 +130,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: RADIUS.xl,
     paddingTop: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    maxHeight: '70%',
     zIndex: 10000,
   },
   handleBar: {
@@ -117,6 +143,9 @@ const styles = StyleSheet.create({
   scrollArea: {
     flexShrink: 1,
     marginBottom: SPACING.md,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xs,
   },
   header: {
     flexDirection: 'row',
@@ -140,6 +169,32 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   timeText: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 2 },
+  moodBadge: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  moodEmoji: { fontSize: 22, marginTop: 1 },
+  moodTextWrap: { flex: 1 },
+  moodLabel: { ...FONTS.caption, color: COLORS.accent, fontWeight: '700' },
+  moodDescription: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 2, lineHeight: 18 },
+  moodBadgeActive: {
+    borderColor: COLORS.accent,
+    backgroundColor: '#F0F7FF',
+  },
+  moodEffect: {
+    ...FONTS.caption,
+    color: COLORS.accent,
+    marginTop: 6,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
   npcBadge: {
     flexDirection: 'row',
     alignItems: 'center',
