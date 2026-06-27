@@ -29,9 +29,12 @@ const FACTOR_COLORS: Record<FactorTone, string> = {
   warn: '#B45309',
 };
 
-function riskLabel(risk: ChoiceRisk): string {
-  const base = risk.level === 'swingy' ? 'Swingy: wide range of results' : 'Steadier: narrower results';
-  return risk.canBurnout ? `${base} · could end your run` : base;
+/** Only surface a tag when it actually matters; a steady choice shows nothing. */
+function riskLabel(risk: ChoiceRisk): string | null {
+  const parts: string[] = [];
+  if (risk.level === 'swingy') parts.push('Swingy');
+  if (risk.canBurnout) parts.push('\u26a0 Could end your run');
+  return parts.length ? parts.join(' \u00b7 ') : null;
 }
 
 export function ScenarioModal({
@@ -57,6 +60,8 @@ export function ScenarioModal({
   const choiceLabels = getScenarioChoiceLabels(scenario, playerRole);
   const mood = getDayModifier(dayModifier);
   const moodHint = getMoodScenarioHint(dayModifier, scenario.id);
+  const yesRiskLabel = riskLabel(yesRisk);
+  const noRiskLabel = riskLabel(noRisk);
 
   return (
     <View style={styles.overlay}>
@@ -147,9 +152,13 @@ export function ScenarioModal({
                 <Text style={styles.btnEmoji}>👍</Text>
                 <Text style={styles.yesBtnText}>{choiceLabels.yes}</Text>
               </View>
-              <Text style={[styles.riskText, styles.riskTextLight, yesRisk.canBurnout && styles.riskDangerLight]}>
-                {riskLabel(yesRisk)}
-              </Text>
+              {yesRiskLabel && (
+                <View style={[styles.riskChip, styles.riskChipLight, yesRisk.canBurnout && styles.riskChipDangerLight]}>
+                  <Text style={[styles.riskChipText, styles.riskChipTextLight, yesRisk.canBurnout && styles.riskChipTextDangerLight]}>
+                    {yesRiskLabel}
+                  </Text>
+                </View>
+              )}
             </Pressable>
 
             <Pressable
@@ -164,9 +173,13 @@ export function ScenarioModal({
                 <Text style={styles.btnEmoji}>✋</Text>
                 <Text style={styles.noBtnText}>{choiceLabels.no}</Text>
               </View>
-              <Text style={[styles.riskText, noRisk.canBurnout && styles.riskDanger]}>
-                {riskLabel(noRisk)}
-              </Text>
+              {noRiskLabel && (
+                <View style={[styles.riskChip, noRisk.canBurnout && styles.riskChipDanger]}>
+                  <Text style={[styles.riskChipText, noRisk.canBurnout && styles.riskChipTextDanger]}>
+                    {noRiskLabel}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           </View>
         </View>
@@ -369,8 +382,18 @@ const styles = StyleSheet.create({
   btnEmoji: { fontSize: 18, marginRight: SPACING.sm },
   yesBtnText: { ...FONTS.bodyBold, color: COLORS.white },
   noBtnText: { ...FONTS.bodyBold, color: COLORS.text },
-  riskText: { ...FONTS.small, color: COLORS.textSecondary },
-  riskTextLight: { color: 'rgba(255,255,255,0.85)' },
-  riskDanger: { color: '#C2410C', fontWeight: '700' },
-  riskDangerLight: { color: '#FFE2D1', fontWeight: '700' },
+  riskChip: {
+    marginTop: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.bg,
+  },
+  riskChipLight: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  riskChipDanger: { backgroundColor: '#FBE4D8' },
+  riskChipDangerLight: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  riskChipText: { ...FONTS.small, color: COLORS.textSecondary, fontWeight: '700' },
+  riskChipTextLight: { color: 'rgba(255,255,255,0.92)' },
+  riskChipTextDanger: { color: '#C2410C' },
+  riskChipTextDangerLight: { color: '#FFE2D1' },
 });

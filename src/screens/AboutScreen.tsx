@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, Linking } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Card } from '../components/Card';
 import { APP_NAME, APP_VERSION } from '../constants/appInfo';
-import { OMA_MARGA, OMA_MARGA_EMAIL_QUOTES } from '../constants/tributes';
+import { OMA_MARGA } from '../constants/tributes';
 import { isBackendConfigured } from '../services/supabase';
 
 export function AboutScreen({ navigation }: any) {
+  const [tributeRevealed, setTributeRevealed] = useState(false);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -21,14 +23,25 @@ export function AboutScreen({ navigation }: any) {
 
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>In memory of Oma Marga</Text>
-          <Text style={styles.body}>{OMA_MARGA.dedicationLong}</Text>
+          <Text style={styles.tagline}>{OMA_MARGA.tagline}</Text>
           <Text style={styles.bodyMuted}>
             {OMA_MARGA.birthYear}-{OMA_MARGA.deathYear}
           </Text>
-          <Text style={styles.quoteSection}>In her own words</Text>
-          <Text style={styles.quote}>{OMA_MARGA_EMAIL_QUOTES.lifeChanges}</Text>
-          <Text style={styles.quote}>{OMA_MARGA_EMAIL_QUOTES.germanPride}</Text>
-          <Text style={styles.quote}>{OMA_MARGA_EMAIL_QUOTES.emailCelebration}</Text>
+
+          {tributeRevealed ? (
+            <View style={styles.tributeBody}>
+              {OMA_MARGA.tributeParagraphs.map((paragraph, i) => (
+                <Text key={i} style={styles.body}>
+                  {paragraph}
+                </Text>
+              ))}
+              <Text style={styles.tributeClosing}>{OMA_MARGA.tributeClosing}</Text>
+            </View>
+          ) : (
+            <Pressable onPress={() => setTributeRevealed(true)} style={styles.revealWrap}>
+              <Text style={styles.link}>Read her tribute →</Text>
+            </Pressable>
+          )}
         </Card>
 
         <Card style={styles.card}>
@@ -96,21 +109,20 @@ const styles = StyleSheet.create({
   sectionTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.sm },
   body: { ...FONTS.body, color: COLORS.textSecondary, lineHeight: 22, marginBottom: SPACING.sm },
   bodyMuted: { ...FONTS.caption, color: COLORS.textMuted, marginTop: SPACING.xs },
-  quoteSection: {
-    ...FONTS.caption,
-    color: COLORS.textMuted,
-    fontWeight: '700',
-    marginTop: SPACING.md,
-    marginBottom: SPACING.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  quote: {
+  tagline: {
     ...FONTS.body,
     color: COLORS.textSecondary,
     fontStyle: 'italic',
     lineHeight: 22,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  revealWrap: { marginTop: SPACING.md },
+  tributeBody: { marginTop: SPACING.md },
+  tributeClosing: {
+    ...FONTS.body,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    marginTop: SPACING.xs,
   },
   linkWrap: { marginTop: SPACING.xs },
   link: { ...FONTS.bodyBold, color: COLORS.accent },

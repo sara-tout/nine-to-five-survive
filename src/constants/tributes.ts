@@ -6,9 +6,14 @@ export const OMA_MARGA = {
   deathYear: 2026,
   title: 'The Straight Shooter',
   emoji: '📚',
-  dedicationShort: 'In loving memory of Marga (1935-2026), Oma Marga.',
-  dedicationLong:
-    'Marga (1935-2026), known to her family as Oma Marga, was direct, unsentimental, and loving in her own way. She spoke multiple languages, remembered everything, read constantly, and kept learning well into her nineties. Late in life, I taught her how to use a computer and email. She would write in German, then call to ask if I got it. She appears in this game as a voice of clarity when the office gets loud.',
+  /** Short line shown before the full tribute is revealed. */
+  tagline: 'A woman of languages, lifelong curiosity, and deep roots.',
+  /** Full tribute, revealed on tap. */
+  tributeParagraphs: [
+    'She kept plants thriving, friendships alive well into her ninetieth year, and a home that was always a joy to visit, organized meticulously in labelled boxes. She made spargelsuppe especially for me, knitted socks, and sewed bags, bed sheets, clothes, and even a costume for me as a child, all by hand. She helped run a boat shop in her youth, and even in old age kept traveling the world with her friends. In her later years, she learned to send emails just to stay in touch.',
+    'She was direct, strong, and caring in her own way, full of quirks, and not afraid to defend the people she loved, including standing up to a rude fabric shop owner in my birth town who had no patience for curious little kids. She left behind things made by hand, handwritten letters in her famously difficult-to-decipher handwriting, emails written in her own voice, and a green thumb that touched everything around her.',
+  ],
+  tributeClosing: 'Remembered with love.',
 } as const;
 
 /** Her words, preserved as she wrote them in email. */
