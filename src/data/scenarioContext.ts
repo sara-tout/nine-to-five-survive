@@ -2,6 +2,18 @@ import { CharacterRole } from './characters';
 import { DayModifierId, getMoodOutcomeNote } from './dayModifiers';
 import { Outcome } from './scenarios';
 import { resolveOutcome } from './scenarioText';
+import { PerkId, getPerkEffect } from './perks';
+
+/** Below this, energy/sanity start to degrade judgment (Phase 2). */
+export const LOW_STAT_THRESHOLD = 35;
+/** Energy spent to prepare for a scenario (Phase 3). Handled in the reducer. */
+export const PREP_ENERGY_COST = 8;
+/** Weight pushed toward the best-career outcome when prepared. */
+const PREP_WEIGHT_BONUS = 26;
+/** Max extra weight pushed toward the worst-career outcome when fully depleted. */
+const DEPLETION_MAX_WEIGHT = 22;
+/** Positive performance kept when depleted (the rest is shaved off). */
+const DEPLETION_PERF_KEEP = 0.65;
 
 export type GameFlag =
   | 'derek-grudge'
@@ -41,6 +53,13 @@ export interface ScenarioContext {
   dayModifier: DayModifierId;
   priorChoices: PriorChoice[];
   flags: GameFlag[];
+  /** Current stats, so low energy/sanity can degrade outcomes (Phase 2). */
+  energy?: number;
+  sanity?: number;
+  /** Player spent energy to prepare for this scenario (Phase 3). */
+  prepared?: boolean;
+  /** Chosen role perk (Phase 4). */
+  perk?: PerkId | null;
 }
 
 function cloneOutcomes(outcomes: Outcome[]): Outcome[] {
@@ -49,6 +68,38 @@ function cloneOutcomes(outcomes: Outcome[]): Outcome[] {
 
 function bumpWeight(outcomes: Outcome[], index: number, delta: number) {
   outcomes[index].weight = Math.max(5, outcomes[index].weight + delta);
+}
+
+const careerValue = (o: Outcome) => o.performance + o.raiseProgress;
+
+function bestCareerIndex(outcomes: Outcome[]): number {
+  let best = 0;
+  for (let i = 1; i < outcomes.length; i++) {
+    if (careerValue(outcomes[i]) > careerValue(outcomes[best])) best = i;
+  }
+  return best;
+}
+
+function worstCareerIndex(outcomes: Outcome[]): number {
+  let worst = 0;
+  for (let i = 1; i < outcomes.length; i++) {
+    if (careerValue(outcomes[i]) < careerValue(outcomes[worst])) worst = i;
+  }
+  return worst;
+}
+
+/**
+ * How depleted the player is, 0 (fresh) to 1 (running on empty), based on the
+ * lower of energy/sanity once either dips under the low-stat threshold.
+ */
+function depletionLevel(context: ScenarioContext): number {
+  const stats = [context.energy, context.sanity].filter(
+    (v): v is number => typeof v === 'number',
+  );
+  if (stats.length === 0) return 0;
+  const lowest = Math.min(...stats);
+  if (lowest >= LOW_STAT_THRESHOLD) return 0;
+  return Math.min(1, (LOW_STAT_THRESHOLD - lowest) / LOW_STAT_THRESHOLD);
 }
 
 /** Shift odds before rolling. Both choices should stay viable; context nudges, not guarantees. */
@@ -380,6 +431,23 @@ export function adjustOutcomeWeights(
     bumpWeight(adjusted, 0, 12);
   }
 
+  // Phase 4: role perk that tilts the odds on a given choice (a free partial prep).
+  const perk = getPerkEffect(context.perk);
+  if (perk?.oddsChoice === choice && perk.oddsBonus) {
+    bumpWeight(adjusted, bestCareerIndex(adjusted), perk.oddsBonus);
+  }
+
+  // Phase 3: preparing pushes the odds toward the best-career outcome.
+  if (context.prepared) {
+    bumpWeight(adjusted, bestCareerIndex(adjusted), PREP_WEIGHT_BONUS);
+  }
+
+  // Phase 2: low energy/sanity degrades judgment, nudging toward the worst-career outcome.
+  const depletion = depletionLevel(context) * (1 - (perk?.depletionResist ?? 0));
+  if (depletion > 0) {
+    bumpWeight(adjusted, worstCareerIndex(adjusted), Math.round(DEPLETION_MAX_WEIGHT * depletion));
+  }
+
   return adjusted;
 }
 
@@ -452,7 +520,11 @@ export function deriveFlags(
   return flags;
 }
 
-function applyStatTweaks(outcome: Outcome, context: ScenarioContext): Outcome {
+function applyStatTweaks(
+  outcome: Outcome,
+  context: ScenarioContext,
+  choice: 'yes' | 'no',
+): Outcome {
   const next = { ...outcome };
 
   if (context.dayModifier === 'bad-sleep') {
@@ -563,6 +635,27 @@ function applyStatTweaks(outcome: Outcome, context: ScenarioContext): Outcome {
   }
   if (context.dayModifier === 'leadership-offsite') {
     next.sanity = Math.max(-30, next.sanity - 2);
+  }
+
+  // Phase 4: role perks soften damage and reward their preferred choice.
+  const perk = getPerkEffect(context.perk);
+  if (perk) {
+    if (perk.energyShield && next.energy < 0) {
+      next.energy = Math.round(next.energy * (1 - perk.energyShield));
+    }
+    if (perk.sanityShield && next.sanity < 0) {
+      next.sanity = Math.round(next.sanity * (1 - perk.sanityShield));
+    }
+    if (perk.perfBonusChoice === choice && next.performance > 0 && perk.perfBonus) {
+      next.performance = Math.min(30, next.performance + perk.perfBonus);
+    }
+  }
+
+  // Phase 2: running on empty, even your wins land smaller.
+  const depletion = depletionLevel(context) * (1 - (perk?.depletionResist ?? 0));
+  if (depletion > 0 && next.performance > 0) {
+    const keep = 1 - (1 - DEPLETION_PERF_KEEP) * depletion;
+    next.performance = Math.round(next.performance * keep);
   }
 
   return next;
@@ -692,7 +785,7 @@ export function buildResolvedOutcome(
   context: ScenarioContext,
 ): Outcome {
   let outcome = resolveOutcome(scenarioId, choice, rawOutcome, outcomeIndex, role);
-  outcome = applyStatTweaks(outcome, context);
+  outcome = applyStatTweaks(outcome, context, choice);
 
   const notes: string[] = [];
   const carryover = carryoverNote(scenarioId, choice, context);

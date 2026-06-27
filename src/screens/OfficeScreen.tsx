@@ -9,7 +9,8 @@ import { OutcomeModal } from '../components/OutcomeModal';
 import { OfficeCoachOverlay } from '../components/OfficeCoachOverlay';
 import { useGame, TOTAL_DAYS, RAISE_THRESHOLD } from '../context/GameContext';
 import { getDayModifier } from '../data/dayModifiers';
-import { adjustOutcomeWeights, buildResolvedOutcome } from '../data/scenarioContext';
+import { adjustOutcomeWeights, buildResolvedOutcome, ScenarioContext, PREP_ENERGY_COST } from '../data/scenarioContext';
+import { getChoiceRisk, getDepletionFactor, getReputationFactors } from '../data/strategy';
 import { pickOutcome } from '../data/scenarios';
 import { getNPC } from '../data/officeNPCs';
 import { getPathHint } from '../utils/officeNavigation';
@@ -91,18 +92,24 @@ export function OfficeScreen({ navigation }: any) {
     }
   }, [state.gameStatus, navigation]);
 
+  const scenarioContext: ScenarioContext = {
+    dayModifier: state.dayModifier,
+    priorChoices: state.dayResults.map((r) => ({
+      scenarioId: r.scenario.id,
+      choice: r.choice,
+    })),
+    flags: state.flags,
+    energy: state.energy,
+    sanity: state.sanity,
+    prepared: state.prepared,
+    perk: state.perk,
+  };
+
   const handleChoose = (choice: 'yes' | 'no') => {
     if (!currentScenario) return;
     hapticMedium();
     const outcomes = choice === 'yes' ? currentScenario.yesOutcomes : currentScenario.noOutcomes;
-    const context = {
-      dayModifier: state.dayModifier,
-      priorChoices: state.dayResults.map((r) => ({
-        scenarioId: r.scenario.id,
-        choice: r.choice,
-      })),
-      flags: state.flags,
-    };
+    const context = scenarioContext;
     const adjusted = adjustOutcomeWeights(currentScenario.id, choice, outcomes, context);
     const { outcome: rawOutcome, index } = pickOutcome(adjusted);
     const outcome = buildResolvedOutcome(
@@ -114,6 +121,11 @@ export function OfficeScreen({ navigation }: any) {
       context,
     );
     dispatch({ type: 'MAKE_CHOICE', choice, outcome, outcomeIndex: index });
+  };
+
+  const handlePrepare = () => {
+    hapticLight();
+    dispatch({ type: 'PREPARE' });
   };
 
   const handleCloseOutcome = () => {
@@ -236,6 +248,18 @@ export function OfficeScreen({ navigation }: any) {
           scenario={currentScenario}
           playerRole={state.playerRole}
           dayModifier={state.dayModifier}
+          factors={[
+            ...getReputationFactors(state.flags),
+            ...(getDepletionFactor(state.energy, state.sanity)
+              ? [getDepletionFactor(state.energy, state.sanity)!]
+              : []),
+          ]}
+          yesRisk={getChoiceRisk(currentScenario, 'yes', state.playerRole, scenarioContext)}
+          noRisk={getChoiceRisk(currentScenario, 'no', state.playerRole, scenarioContext)}
+          prepared={state.prepared}
+          canPrepare={state.energy > PREP_ENERGY_COST}
+          prepCost={PREP_ENERGY_COST}
+          onPrepare={handlePrepare}
           onChoose={handleChoose}
         />
       )}

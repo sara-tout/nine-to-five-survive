@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useReducer, ReactNode } from 'react';
 import { CharacterRole } from '../data/characters';
 import { DayModifierId, pickDayModifierOrder } from '../data/dayModifiers';
-import { GameFlag, deriveFlags } from '../data/scenarioContext';
+import { GameFlag, deriveFlags, PREP_ENERGY_COST } from '../data/scenarioContext';
+import { PerkId, getDefaultPerk } from '../data/perks';
 import { SCENARIOS, Scenario, Outcome, pickScenarioOrder } from '../data/scenarios';
 import { PLAYER_START, isWalkable, getAdjacentInteractable } from '../data/officeMap';
 import { EmployeeReward } from '../data/employeeRewards';
@@ -55,10 +56,15 @@ export interface GameState {
   nearInteractable: boolean;
   dayModifier: DayModifierId;
   flags: GameFlag[];
+  /** Role perk chosen for this run (Phase 4). */
+  perk: PerkId | null;
+  /** Whether the player spent energy to prepare for the current scenario (Phase 3). */
+  prepared: boolean;
 }
 
 export type Action =
   | { type: 'SELECT_CHARACTER'; role: CharacterRole; emoji: string }
+  | { type: 'SELECT_PERK'; perk: PerkId }
   | {
       type: 'START_GAME';
       scenarioOrder: number[];
@@ -69,6 +75,7 @@ export type Action =
   | { type: 'MOVE_PLAYER'; dx: number; dy: number }
   | { type: 'INTERACT' }
   | { type: 'TELEPORT_TO_SCENARIO' }
+  | { type: 'PREPARE' }
   | { type: 'MAKE_CHOICE'; choice: 'yes' | 'no'; outcome: Outcome; outcomeIndex: number }
   | { type: 'CLOSE_OUTCOME' }
   | { type: 'NEXT_DAY' }
@@ -104,6 +111,8 @@ export const initialState: GameState = {
   nearInteractable: false,
   dayModifier: 'manager-on-edge',
   flags: [],
+  perk: getDefaultPerk('builder'),
+  prepared: false,
 };
 
 function getActiveScenarioId(scenarioOrder: number[], day: number): string | null {
@@ -129,7 +138,15 @@ function checkNearInteractable(px: number, py: number, activeId: string | null):
 export function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'SELECT_CHARACTER': {
-      return { ...state, playerRole: action.role, playerEmoji: action.emoji };
+      return {
+        ...state,
+        playerRole: action.role,
+        playerEmoji: action.emoji,
+        perk: getDefaultPerk(action.role),
+      };
+    }
+    case 'SELECT_PERK': {
+      return { ...state, perk: action.perk };
     }
     case 'START_GAME': {
       const { scenarioOrder, dayModifierOrder, scenarioCycleReset, moodCycleReset } = action;
@@ -139,6 +156,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
         ...initialState,
         playerRole: state.playerRole,
         playerEmoji: state.playerEmoji,
+        perk: state.perk,
         scenarioOrder,
         dayModifierOrder,
         scenarioCycleReset,
@@ -186,6 +204,17 @@ export function gameReducer(state: GameState, action: Action): GameState {
         nearInteractable: checkNearInteractable(stand.x, stand.y, state.activeScenarioId),
       };
     }
+    case 'PREPARE': {
+      // Spend energy to improve the odds on the current scenario. Never enough
+      // to burn out on its own, and only once per scenario.
+      if (!state.showScenarioModal || state.prepared) return state;
+      if (state.energy <= PREP_ENERGY_COST) return state;
+      return {
+        ...state,
+        energy: clamp(state.energy - PREP_ENERGY_COST, MIN_STAT, MAX_STAT),
+        prepared: true,
+      };
+    }
     case 'MAKE_CHOICE': {
       const { choice, outcome, outcomeIndex } = action;
       const newEnergy = clamp(state.energy + outcome.energy, MIN_STAT, MAX_STAT);
@@ -214,6 +243,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
         currentChoice: choice,
         dayResults: [...state.dayResults, dayResult],
         flags,
+        prepared: false,
         showScenarioModal: false,
         showOutcomeModal: true,
         gameStatus: isStatBurnout ? 'stat-burnout' : state.gameStatus,
@@ -248,6 +278,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
         currentDay: nextDay,
         currentOutcome: null,
         currentChoice: null,
+        prepared: false,
         gameStatus: 'playing',
         playerPos: PLAYER_START,
         activeScenarioId: activeId,

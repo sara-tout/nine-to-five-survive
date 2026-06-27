@@ -15,8 +15,10 @@ import {
   deriveFlags,
   GameFlag,
   ScenarioContext,
+  PREP_ENERGY_COST,
 } from '../src/data/scenarioContext';
 import { DAY_MODIFIERS, DayModifierId } from '../src/data/dayModifiers';
+import { PerkId } from '../src/data/perks';
 import { RAISE_THRESHOLD, STARTING_PERFORMANCE, TOTAL_DAYS } from '../src/constants/gameRules';
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -30,9 +32,19 @@ function sample<T>(arr: T[], n: number): T[] {
   return copy.slice(0, n);
 }
 
-type Strategy = 'random' | 'greedy-perf' | 'careful';
+type Strategy = 'random' | 'greedy-perf' | 'careful' | 'strategic';
+
+interface RunOpts {
+  perk?: PerkId | null;
+  /** Whether the player invests energy to prep high-stakes scenarios. */
+  usePrep?: boolean;
+}
 
 const perfGain = (o: Outcome) => o.performance + o.raiseProgress;
+const careerSpread = (outcomes: Outcome[]) => {
+  const careers = outcomes.map(perfGain);
+  return Math.max(...careers) - Math.min(...careers);
+};
 
 function expectedStats(outcomes: Outcome[]) {
   const total = outcomes.reduce((s, o) => s + o.weight, 0);
@@ -47,11 +59,12 @@ function expectedStats(outcomes: Outcome[]) {
   return { perf, minEnergy, minSanity };
 }
 
-function runOnce(strategy: Strategy) {
+function runOnce(strategy: Strategy, opts: RunOpts = {}) {
   let energy = 80;
   let sanity = 80;
   let performance = STARTING_PERFORMANCE;
   let flags: GameFlag[] = [];
+  const perk = opts.perk ?? null;
 
   const scenarios = sample(SCENARIOS, TOTAL_DAYS);
   const moods = sample(
@@ -61,17 +74,26 @@ function runOnce(strategy: Strategy) {
 
   for (let day = 0; day < TOTAL_DAYS; day++) {
     const scenario = scenarios[day];
-    const context: ScenarioContext = { dayModifier: moods[day], priorChoices: [], flags };
+    const baseContext = (prepared: boolean): ScenarioContext => ({
+      dayModifier: moods[day],
+      priorChoices: [],
+      flags,
+      energy,
+      sanity,
+      prepared,
+      perk,
+    });
 
-    const resolvedFor = (choice: 'yes' | 'no') => {
+    const resolvedFor = (choice: 'yes' | 'no', prepared: boolean) => {
       const base = choice === 'yes' ? scenario.yesOutcomes : scenario.noOutcomes;
-      const weighted = adjustOutcomeWeights(scenario.id, choice, base, context);
-      return weighted.map((o, i) =>
-        buildResolvedOutcome(scenario.id, choice, o, i, 'builder', context),
-      );
+      const ctx = baseContext(prepared);
+      const weighted = adjustOutcomeWeights(scenario.id, choice, base, ctx);
+      return weighted.map((o, i) => buildResolvedOutcome(scenario.id, choice, o, i, 'builder', ctx));
     };
-    const yesOutcomes = resolvedFor('yes');
-    const noOutcomes = resolvedFor('no');
+
+    // Pick a choice using the un-prepped odds first.
+    const yesOutcomes = resolvedFor('yes', false);
+    const noOutcomes = resolvedFor('no', false);
 
     let choice: 'yes' | 'no';
     if (strategy === 'random') {
@@ -79,22 +101,25 @@ function runOnce(strategy: Strategy) {
     } else {
       const ey = expectedStats(yesOutcomes);
       const en = expectedStats(noOutcomes);
-      if (strategy === 'careful') {
-        // Avoid any choice that could burn out this turn; otherwise chase performance.
+      if (strategy === 'careful' || strategy === 'strategic') {
         const yesSafe = energy + ey.minEnergy > 0 && sanity + ey.minSanity > 0;
         const noSafe = energy + en.minEnergy > 0 && sanity + en.minSanity > 0;
-        if (yesSafe !== noSafe) {
-          choice = yesSafe ? 'yes' : 'no';
-        } else {
-          choice = ey.perf >= en.perf ? 'yes' : 'no';
-        }
+        choice = yesSafe !== noSafe ? (yesSafe ? 'yes' : 'no') : ey.perf >= en.perf ? 'yes' : 'no';
       } else {
         choice = ey.perf >= en.perf ? 'yes' : 'no';
       }
     }
 
-    const outcomes = choice === 'yes' ? yesOutcomes : noOutcomes;
-    const { outcome, index } = pickOutcome(outcomes);
+    // Phase 3: invest in high-stakes, high-variance scenarios when we can afford it.
+    const branch = choice === 'yes' ? yesOutcomes : noOutcomes;
+    const prepared =
+      Boolean(opts.usePrep) &&
+      energy >= 55 &&
+      careerSpread(branch) >= 16;
+    if (prepared) energy = clamp(energy - PREP_ENERGY_COST, 0, 100);
+
+    const finalOutcomes = prepared ? resolvedFor(choice, true) : branch;
+    const { outcome, index } = pickOutcome(finalOutcomes);
 
     energy = clamp(energy + outcome.energy, 0, 100);
     sanity = clamp(sanity + outcome.sanity, 0, 100);
@@ -110,13 +135,14 @@ function runOnce(strategy: Strategy) {
 }
 
 const RUNS = 20000;
-for (const strategy of ['random', 'greedy-perf', 'careful'] as Strategy[]) {
+
+function report(label: string, strategy: Strategy, opts: RunOpts = {}) {
   let wins = 0;
   let burnouts = 0;
   let perfSum = 0;
   const perfs: number[] = [];
   for (let i = 0; i < RUNS; i++) {
-    const r = runOnce(strategy);
+    const r = runOnce(strategy, opts);
     if (r.won) wins++;
     if (r.burnout) burnouts++;
     perfSum += r.performance;
@@ -124,9 +150,16 @@ for (const strategy of ['random', 'greedy-perf', 'careful'] as Strategy[]) {
   }
   perfs.sort((a, b) => a - b);
   console.log(
-    `${strategy.padEnd(12)} win: ${((wins / RUNS) * 100).toFixed(1)}%  burnout: ${((burnouts / RUNS) * 100).toFixed(1)}%  avg perf: ${(perfSum / RUNS).toFixed(1)}  median: ${perfs[Math.floor(RUNS / 2)]}  p90: ${perfs[Math.floor(RUNS * 0.9)]}`,
+    `${label.padEnd(22)} win: ${((wins / RUNS) * 100).toFixed(1)}%  burnout: ${((burnouts / RUNS) * 100).toFixed(1)}%  avg perf: ${(perfSum / RUNS).toFixed(1)}  median: ${perfs[Math.floor(RUNS / 2)]}`,
   );
 }
+
+report('random', 'random', { perk: 'ship-fast' });
+report('greedy-perf', 'greedy-perf', { perk: 'ship-fast' });
+report('careful (no perk/prep)', 'careful');
+report('strategic +prep', 'strategic', { usePrep: true });
+report('strategic +prep+deep', 'strategic', { usePrep: true, perk: 'deep-work' });
+report('strategic +prep+ship', 'strategic', { usePrep: true, perk: 'ship-fast' });
 
 // Threshold sensitivity: what win rate would each threshold give a decent player?
 {

@@ -3,27 +3,36 @@ import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'rea
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Button } from '../components/Button';
 import { CHARACTERS } from '../data/characters';
+import { PERKS_BY_ROLE } from '../data/perks';
 import { useGame } from '../context/GameContext';
 
 export function CharacterSelectScreen({ navigation }: any) {
   const { dispatch, startGame, unplayedScenarioCount, unplayedMoodCount } = useGame();
   const [selected, setSelected] = useState(0);
+  const [perkIndex, setPerkIndex] = useState(0);
   const [starting, setStarting] = useState(false);
+
+  const char = CHARACTERS[selected];
+  const perks = PERKS_BY_ROLE[char.role];
+
+  const handleSelectCharacter = (i: number) => {
+    setSelected(i);
+    setPerkIndex(0);
+  };
 
   const handleConfirm = async () => {
     if (starting) return;
     setStarting(true);
     dispatch({
       type: 'SELECT_CHARACTER',
-      role: CHARACTERS[selected].role,
-      emoji: CHARACTERS[selected].emoji,
+      role: char.role,
+      emoji: char.emoji,
     });
+    dispatch({ type: 'SELECT_PERK', perk: perks[perkIndex].id });
     await startGame();
     setStarting(false);
     navigation.replace('Office');
   };
-
-  const char = CHARACTERS[selected];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,7 +50,7 @@ export function CharacterSelectScreen({ navigation }: any) {
           {CHARACTERS.map((c, i) => (
             <Pressable
               key={c.name}
-              onPress={() => setSelected(i)}
+              onPress={() => handleSelectCharacter(i)}
               style={[
                 styles.card,
                 selected === i && styles.cardSelected,
@@ -64,6 +73,24 @@ export function CharacterSelectScreen({ navigation }: any) {
             </View>
           </View>
           <Text style={styles.bioText}>{char.bio}</Text>
+        </View>
+
+        <View style={styles.perkSection}>
+          <Text style={styles.perkHeader}>Pick a perk</Text>
+          <Text style={styles.perkSub}>Your edge for the week. Choose how you want to play.</Text>
+          {perks.map((perk, i) => (
+            <Pressable
+              key={perk.id}
+              onPress={() => setPerkIndex(i)}
+              style={[styles.perkCard, perkIndex === i && styles.perkCardSelected]}
+            >
+              <Text style={[styles.perkName, perkIndex === i && styles.perkNameSelected]}>
+                {perkIndex === i ? '\u2713 ' : ''}
+                {perk.name}
+              </Text>
+              <Text style={styles.perkTagline}>{perk.tagline}</Text>
+            </Pressable>
+          ))}
         </View>
 
         <View style={styles.buttonArea}>
@@ -175,6 +202,45 @@ const styles = StyleSheet.create({
     ...FONTS.body,
     color: COLORS.textSecondary,
     lineHeight: 24,
+  },
+  perkSection: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  perkHeader: {
+    ...FONTS.subheading,
+    color: COLORS.text,
+  },
+  perkSub: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    marginTop: -4,
+    marginBottom: 2,
+  },
+  perkCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 2,
+    borderColor: COLORS.cardBorder,
+  },
+  perkCardSelected: {
+    borderColor: COLORS.accent,
+    backgroundColor: COLORS.accentLight,
+  },
+  perkName: {
+    ...FONTS.bodyBold,
+    color: COLORS.textSecondary,
+  },
+  perkNameSelected: {
+    color: COLORS.accent,
+  },
+  perkTagline: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    lineHeight: 18,
   },
   buttonArea: {
     paddingHorizontal: SPACING.lg,

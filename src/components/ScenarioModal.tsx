@@ -7,15 +7,46 @@ import { DayModifierId, getDayModifier, getMoodScenarioHint } from '../data/dayM
 import { Scenario } from '../data/scenarios';
 import { getNPC } from '../data/officeNPCs';
 import { getScenarioChoiceLabels, getScenarioDescription } from '../data/scenarioText';
+import { ChoiceRisk, Factor, FactorTone } from '../data/strategy';
 
 interface ScenarioModalProps {
   scenario: Scenario;
   playerRole: CharacterRole;
   dayModifier: DayModifierId;
+  factors: Factor[];
+  yesRisk: ChoiceRisk;
+  noRisk: ChoiceRisk;
+  prepared: boolean;
+  canPrepare: boolean;
+  prepCost: number;
+  onPrepare: () => void;
   onChoose: (choice: 'yes' | 'no') => void;
 }
 
-export function ScenarioModal({ scenario, playerRole, dayModifier, onChoose }: ScenarioModalProps) {
+const FACTOR_COLORS: Record<FactorTone, string> = {
+  good: '#1F8A4C',
+  bad: '#C2410C',
+  warn: '#B45309',
+};
+
+function riskLabel(risk: ChoiceRisk): string {
+  const base = risk.level === 'swingy' ? 'Swingy: wide range of results' : 'Steadier: narrower results';
+  return risk.canBurnout ? `${base} · could end your run` : base;
+}
+
+export function ScenarioModal({
+  scenario,
+  playerRole,
+  dayModifier,
+  factors,
+  yesRisk,
+  noRisk,
+  prepared,
+  canPrepare,
+  prepCost,
+  onPrepare,
+  onChoose,
+}: ScenarioModalProps) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const maxModalHeight = Math.min(windowHeight * 0.88, windowHeight - insets.top - 24);
@@ -70,9 +101,40 @@ export function ScenarioModal({ scenario, playerRole, dayModifier, onChoose }: S
 
             <Text style={styles.title}>{scenario.title}</Text>
             <Text style={styles.description}>{description}</Text>
+
+            {factors.length > 0 && (
+              <View style={styles.factorsCard}>
+                <Text style={styles.factorsHeader}>Read the room</Text>
+                {factors.map((factor, i) => (
+                  <View key={i} style={styles.factorRow}>
+                    <View style={[styles.factorDot, { backgroundColor: FACTOR_COLORS[factor.tone] }]} />
+                    <Text style={styles.factorText}>{factor.text}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.buttonsArea}>
+            <Pressable
+              onPress={onPrepare}
+              disabled={prepared || !canPrepare}
+              style={({ pressed }) => [
+                styles.prepBtn,
+                prepared && styles.prepBtnDone,
+                !prepared && !canPrepare && styles.prepBtnDisabled,
+                pressed && !prepared && canPrepare && { opacity: 0.7 },
+              ]}
+            >
+              <Text style={[styles.prepText, prepared && styles.prepTextDone]}>
+                {prepared
+                  ? '\u2713 Prepared \u00b7 better odds this scenario'
+                  : canPrepare
+                    ? `\ud83c\udfaf Prepare (\u2212${prepCost} energy) for better odds`
+                    : 'Too drained to prepare'}
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={() => onChoose('yes')}
               style={({ pressed }) => [
@@ -81,8 +143,13 @@ export function ScenarioModal({ scenario, playerRole, dayModifier, onChoose }: S
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <Text style={styles.btnEmoji}>👍</Text>
-              <Text style={styles.yesBtnText}>{choiceLabels.yes}</Text>
+              <View style={styles.choiceTop}>
+                <Text style={styles.btnEmoji}>👍</Text>
+                <Text style={styles.yesBtnText}>{choiceLabels.yes}</Text>
+              </View>
+              <Text style={[styles.riskText, styles.riskTextLight, yesRisk.canBurnout && styles.riskDangerLight]}>
+                {riskLabel(yesRisk)}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -93,8 +160,13 @@ export function ScenarioModal({ scenario, playerRole, dayModifier, onChoose }: S
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <Text style={styles.btnEmoji}>✋</Text>
-              <Text style={styles.noBtnText}>{choiceLabels.no}</Text>
+              <View style={styles.choiceTop}>
+                <Text style={styles.btnEmoji}>✋</Text>
+                <Text style={styles.noBtnText}>{choiceLabels.no}</Text>
+              </View>
+              <Text style={[styles.riskText, noRisk.canBurnout && styles.riskDanger]}>
+                {riskLabel(noRisk)}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -219,17 +291,72 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: 24,
   },
+  factorsCard: {
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    padding: SPACING.sm,
+    gap: 6,
+  },
+  factorsHeader: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  factorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+  },
+  factorDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  factorText: { ...FONTS.caption, color: COLORS.text, flex: 1, lineHeight: 18 },
   buttonsArea: {
     gap: SPACING.sm,
   },
-  choiceBtn: {
-    flexDirection: 'row',
+  prepBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    borderStyle: 'dashed',
+    backgroundColor: COLORS.accentLight,
+  },
+  prepBtnDone: {
+    borderStyle: 'solid',
+    borderColor: '#1F8A4C',
+    backgroundColor: '#E9F7EF',
+  },
+  prepBtnDisabled: {
+    borderColor: COLORS.cardBorder,
+    backgroundColor: COLORS.bg,
+  },
+  prepText: { ...FONTS.caption, color: COLORS.accent, fontWeight: '700' },
+  prepTextDone: { color: '#1F8A4C' },
+  choiceBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADIUS.lg,
     borderWidth: 1.5,
+    gap: 3,
+  },
+  choiceTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   yesBtn: {
     backgroundColor: COLORS.accent,
@@ -242,4 +369,8 @@ const styles = StyleSheet.create({
   btnEmoji: { fontSize: 18, marginRight: SPACING.sm },
   yesBtnText: { ...FONTS.bodyBold, color: COLORS.white },
   noBtnText: { ...FONTS.bodyBold, color: COLORS.text },
+  riskText: { ...FONTS.small, color: COLORS.textSecondary },
+  riskTextLight: { color: 'rgba(255,255,255,0.85)' },
+  riskDanger: { color: '#C2410C', fontWeight: '700' },
+  riskDangerLight: { color: '#FFE2D1', fontWeight: '700' },
 });
