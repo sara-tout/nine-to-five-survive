@@ -26,10 +26,11 @@ import { hapticLight, hapticMedium, hapticSuccess } from '../utils/haptics';
 import { hasSeenOfficeCoach, markOfficeCoachSeen } from '../storage/onboarding';
 
 export function OfficeScreen({ navigation }: any) {
-  const { state, dispatch, currentScenario, playerProfile } = useGame();
+  const { state, dispatch, currentScenario } = useGame();
   const [showCoach, setShowCoach] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const canSkipWalk = playerProfile.localRunsCompleted > 0;
+  // Always offer the walk skip so behavior is consistent across devices/profiles.
+  const canSkipWalk = true;
 
   useEffect(() => {
     hasSeenOfficeCoach().then((seen) => {
@@ -175,7 +176,7 @@ export function OfficeScreen({ navigation }: any) {
           </View>
           {currentScenario && (
             <View style={styles.hintBadge}>
-              <Text style={styles.hintText}>
+              <Text style={styles.hintText} numberOfLines={1}>
                 {currentScenario.icon} {currentScenario.locationLabel}
               </Text>
             </View>

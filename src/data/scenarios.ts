@@ -1,8 +1,3 @@
-import {
-  OMA_MARGA_EMAIL_QUOTES as MARGA,
-  OMA_MARGA_EMAIL_TRANSLATIONS as MARGA_EN,
-} from '../constants/tributes';
-
 export interface Outcome {
   narrative: string;
   /** Prior choices / mood context shown separately in the UI */
@@ -1720,7 +1715,7 @@ export const SCENARIOS: Scenario[] = [
     yesOutcomes: [
       {
         narrative:
-          `You picked up. Her first words: "Did you get my email?" Not hello. Not small talk. You said you had, and that one line in it had stuck with you: "${MARGA.lifeChanges}" (${MARGA_EN.lifeChanges}) You told her you loved it. She said she was proud of you. You hung up happier and more sure of yourself than the whole week of meetings had managed.`,
+          `You picked up. Her first words: "Did you get my email?" Not hello. Not small talk. You said you had, and one line in it had stuck with you: "Life is mostly made of changes, and every day has to be decided fresh." You told her you loved it. She said she was proud of you. You hung up happier and more sure of yourself than the whole week of meetings had managed.`,
         energy: 5,
         sanity: 20,
         performance: 5,
@@ -1729,7 +1724,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         narrative:
-          `You picked up. "Did you get my email?" You opened it right there while she waited. Near the end, word for word: "${MARGA.germanPride}" (${MARGA_EN.germanPride}) Something in you went instantly warmer, a little prouder of yourself. The rest of your afternoon went faster than it had any right to, and the first thing you did after was reply to her email.`,
+          `You picked up. "Did you get my email?" You opened it right there while she waited. She had figured out how to attach a photo all by herself and was thrilled about it, and she signed off: "So proud of you." Something in you went instantly warmer, a little prouder too. The rest of your afternoon went faster than it had any right to, and the first thing you did after was reply to her email.`,
         energy: 0,
         sanity: 15,
         performance: 8,
@@ -1740,7 +1735,7 @@ export const SCENARIOS: Scenario[] = [
     noOutcomes: [
       {
         narrative:
-          `You sent it to voicemail and finished the deck. At 7 PM your inbox had a follow-up and a two-minute message. "Did you get my email?" No scolding. You opened the email on the walk home. It ended: "${MARGA.emailCelebration}" (${MARGA_EN.emailCelebration}) Of course there were four exclamation marks.`,
+          `You sent it to voicemail and finished the deck. At 7 PM your inbox had a follow-up and a two-minute message. "Did you get my email?" No scolding. You opened the email on the walk home. It ended: "I wish you lots of fun and success. Here's to email!!!!" Of course there were four exclamation marks.`,
         energy: 0,
         sanity: 10,
         performance: 0,
@@ -1749,7 +1744,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         narrative:
-          `You silenced the call and pushed through. The work got done. Later: a missed call and an unread email. The preview on your lock screen ended with: "Das kann ich nur bewundern." (${MARGA_EN.admire}) It read like encouragement, the kind you could have used today. You stared at it longer than any chat thread, and knew the call would have been a better use of the hour than whatever you traded it for.`,
+          `You silenced the call and pushed through. The work got done. Later: a missed call and an unread email. The preview on your lock screen ended with: "I am so proud of you." It read like encouragement, the kind you could have used today. You stared at it longer than any chat thread, and knew the call would have been a better use of the hour than whatever you traded it for.`,
         energy: 5,
         sanity: -5,
         performance: -3,

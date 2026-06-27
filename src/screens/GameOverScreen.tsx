@@ -87,7 +87,7 @@ export function GameOverScreen({ navigation }: any) {
         onHome={handleHome}
         footerHidden={!!activeCelebration}
       >
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <Animated.View style={[styles.fadeWrap, { opacity: fadeAnim }]}>
           <Animated.View
             style={[styles.iconWrap, { transform: [{ translateX: shakeAnim }] }]}
           >
@@ -112,27 +112,27 @@ export function GameOverScreen({ navigation }: any) {
             <Text style={styles.statsTitle}>Final Stats</Text>
             <View style={styles.statRow}>
               <Text style={styles.statIcon}>⚡</Text>
-              <Text style={styles.statLabel}>Energy</Text>
-              <Text style={[styles.statValue, state.energy <= 0 && { color: COLORS.danger }]}>
+              <Text style={styles.statLabel} numberOfLines={1}>Energy</Text>
+              <Text style={[styles.statValue, state.energy <= 0 && { color: COLORS.danger }]} numberOfLines={1}>
                 {Math.max(0, state.energy)}
               </Text>
             </View>
             <View style={styles.statRow}>
               <Text style={styles.statIcon}>🧠</Text>
-              <Text style={styles.statLabel}>Sanity</Text>
-              <Text style={[styles.statValue, state.sanity <= 0 && { color: COLORS.danger }]}>
+              <Text style={styles.statLabel} numberOfLines={1}>Sanity</Text>
+              <Text style={[styles.statValue, state.sanity <= 0 && { color: COLORS.danger }]} numberOfLines={1}>
                 {Math.max(0, state.sanity)}
               </Text>
             </View>
             <View style={styles.statRow}>
               <Text style={styles.statIcon}>📊</Text>
-              <Text style={styles.statLabel}>Performance</Text>
-              <Text style={styles.statValue}>{state.performance}/{RAISE_THRESHOLD} needed</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Performance</Text>
+              <Text style={styles.statValue} numberOfLines={1}>{state.performance} / {RAISE_THRESHOLD}</Text>
             </View>
-            <View style={styles.statRow}>
+            <View style={[styles.statRow, styles.statRowLast]}>
               <Text style={styles.statIcon}>📅</Text>
-              <Text style={styles.statLabel}>Days Survived</Text>
-              <Text style={styles.statValue}>{state.currentDay}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Days Survived</Text>
+              <Text style={styles.statValue} numberOfLines={1}>{state.currentDay}</Text>
             </View>
           </Card>
 
@@ -156,18 +156,22 @@ const styles = StyleSheet.create({
   scroll: {
     alignItems: 'center',
   },
+  fadeWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
   iconWrap: {
-    width: 100,
-    height: 100,
+    width: 64,
+    height: 64,
     borderRadius: RADIUS.xl,
     backgroundColor: COLORS.dangerBg,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.lg,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
-  icon: { fontSize: 48 },
+  icon: { fontSize: 34 },
   title: {
     ...FONTS.heading,
     color: COLORS.danger,
@@ -180,14 +184,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 4,
     textTransform: 'uppercase',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   messageCard: { marginBottom: SPACING.md, width: '100%' },
   message: {
     ...FONTS.body,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 24,
   },
   streakNotice: {
     ...FONTS.caption,
@@ -209,27 +213,28 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accentLight,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     width: '100%',
   },
   tipIcon: { fontSize: 20, marginRight: SPACING.sm },
-  tipText: { ...FONTS.body, color: COLORS.accent, flex: 1 },
-  statsCard: { marginBottom: SPACING.lg, width: '100%' },
-  statsTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.md },
+  tipText: { ...FONTS.caption, color: COLORS.accent, flex: 1, lineHeight: 20 },
+  statsCard: { marginBottom: SPACING.md, width: '100%' },
+  statsTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.sm },
   statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs + 2,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.cardBorder,
   },
+  statRowLast: { borderBottomWidth: 0 },
   statIcon: { fontSize: 16, marginRight: SPACING.sm },
   statLabel: { ...FONTS.body, color: COLORS.textSecondary, flex: 1 },
-  statValue: { ...FONTS.bodyBold, color: COLORS.text },
+  statValue: { ...FONTS.bodyBold, color: COLORS.text, marginLeft: SPACING.sm },
   hint: {
     ...FONTS.small,
     color: COLORS.textMuted,
     textAlign: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
   },
 });

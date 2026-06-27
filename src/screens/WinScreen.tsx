@@ -93,7 +93,7 @@ export function WinScreen({ navigation }: any) {
         onHome={handleHome}
         footerHidden={!!activeCelebration}
       >
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <Animated.View style={[styles.fadeWrap, { opacity: fadeAnim }]}>
           <View style={styles.confettiRow}>
             {confettiAnims.map((anim, i) => (
               <Animated.Text
@@ -128,9 +128,8 @@ export function WinScreen({ navigation }: any) {
 
           <Card style={styles.messageCard}>
             <Text style={styles.message}>
-              Five days of navigating office politics, dodging unnecessary meetings, and protecting
-              your sanity, and it paid off. You played the game smarter, not harder. Your bank
-              account thanks you. Your therapist is cautiously optimistic.
+              Five days of office politics and protected sanity, and it paid off. You played smarter,
+              not harder. Your bank account thanks you; your therapist is cautiously optimistic.
             </Text>
             {streakNotice && <Text style={styles.streakNotice}>{streakNotice}</Text>}
             {lastRunSyncMessage && <Text style={styles.syncNotice}>{lastRunSyncMessage}</Text>}
@@ -158,9 +157,9 @@ export function WinScreen({ navigation }: any) {
             </View>
             <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.statEmoji}>📊</Text>
-              <Text style={styles.statLabel}>Performance</Text>
-              <Text style={[styles.statValue, { color: COLORS.success }]}>
-                {state.performance}/{RAISE_THRESHOLD} needed ✓
+              <Text style={styles.statLabel} numberOfLines={1}>Performance</Text>
+              <Text style={[styles.statValue, { color: COLORS.success }]} numberOfLines={1}>
+                {state.performance}/{RAISE_THRESHOLD} ✓
               </Text>
             </View>
           </Card>
@@ -187,30 +186,34 @@ const styles = StyleSheet.create({
   scroll: {
     alignItems: 'center',
   },
+  fadeWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
   confettiRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: SPACING.md,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
-  confetti: { fontSize: 28 },
+  confetti: { fontSize: 24 },
   trophyWrap: {
-    width: 100,
-    height: 100,
+    width: 64,
+    height: 64,
     borderRadius: RADIUS.xl,
     backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
     borderWidth: 2,
     borderColor: '#FFD700',
   },
-  trophy: { fontSize: 48 },
+  trophy: { fontSize: 34 },
   title: {
     ...FONTS.heading,
-    fontSize: 28,
+    fontSize: 26,
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: SPACING.xs,
@@ -219,14 +222,14 @@ const styles = StyleSheet.create({
     ...FONTS.subheading,
     color: COLORS.accent,
     textAlign: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
-  messageCard: { marginBottom: SPACING.lg, width: '100%' },
+  messageCard: { marginBottom: SPACING.md, width: '100%' },
   message: {
     ...FONTS.body,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   streakNotice: {
     ...FONTS.caption,
@@ -244,37 +247,37 @@ const styles = StyleSheet.create({
   },
   gradeWrap: {
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   gradeBadge: {
-    width: 64,
-    height: 64,
+    width: 52,
+    height: 52,
     borderRadius: RADIUS.lg,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     backgroundColor: COLORS.card,
   },
-  gradeText: { fontSize: 32, fontWeight: '800' },
+  gradeText: { fontSize: 26, fontWeight: '800' },
   gradeLabel: { ...FONTS.caption, color: COLORS.textSecondary },
   gradeBonus: { ...FONTS.small, color: COLORS.accent, marginTop: SPACING.xs, textAlign: 'center' },
-  statsCard: { marginBottom: SPACING.lg, width: '100%' },
-  statsTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.md },
+  statsCard: { marginBottom: SPACING.md, width: '100%' },
+  statsTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.sm },
   statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs + 2,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.cardBorder,
   },
   statEmoji: { fontSize: 16, marginRight: SPACING.sm },
   statLabel: { ...FONTS.body, color: COLORS.textSecondary, flex: 1 },
-  statValue: { ...FONTS.bodyBold, color: COLORS.text },
+  statValue: { ...FONTS.bodyBold, color: COLORS.text, marginLeft: SPACING.sm },
   hint: {
     ...FONTS.small,
     color: COLORS.textMuted,
     textAlign: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
   },
 });

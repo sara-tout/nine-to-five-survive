@@ -43,7 +43,7 @@ export function CharacterSelectScreen({ navigation }: any) {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Choose Your Fighter</Text>
-          <Text style={styles.subtitle}>Who are you today? Scenarios adapt lightly to your role.</Text>
+          <Text style={styles.subtitle}>Who are you today?</Text>
         </View>
 
         <View style={styles.grid}>
@@ -123,8 +123,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
     alignItems: 'center',
   },
   title: {
@@ -142,12 +142,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
     gap: SPACING.sm,
   },
   card: {
-    width: 96,
-    height: 96,
+    width: 76,
+    height: 76,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.card,
     borderWidth: 2,
@@ -160,8 +160,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accentLight,
   },
   cardEmoji: {
-    fontSize: 36,
-    marginBottom: SPACING.xs,
+    fontSize: 30,
+    marginBottom: 2,
   },
   cardName: {
     ...FONTS.caption,
@@ -173,10 +173,10 @@ const styles = StyleSheet.create({
   },
   bioSection: {
     marginHorizontal: SPACING.lg,
-    marginTop: SPACING.sm,
+    marginTop: SPACING.xs,
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
@@ -184,10 +184,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   bioEmoji: {
-    fontSize: 40,
+    fontSize: 34,
   },
   bioName: {
     ...FONTS.subheading,
@@ -201,12 +201,12 @@ const styles = StyleSheet.create({
   bioText: {
     ...FONTS.body,
     color: COLORS.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   perkSection: {
     marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+    gap: SPACING.xs,
   },
   perkHeader: {
     ...FONTS.subheading,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   perkCard: {
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    padding: SPACING.sm + 2,
     borderWidth: 2,
     borderColor: COLORS.cardBorder,
   },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   buttonArea: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   poolHint: {
     ...FONTS.caption,

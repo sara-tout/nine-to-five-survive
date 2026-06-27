@@ -59,9 +59,8 @@ export function StatBar({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.icon}>{icon}</Text>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={[styles.value, isLow && { color: COLORS.danger }]}>
-          {Math.round(value)}
+        <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          {label}
         </Text>
         {showChange !== undefined && showChange !== 0 && (
           <Animated.Text
@@ -75,22 +74,27 @@ export function StatBar({
           </Animated.Text>
         )}
       </View>
-      <View style={[styles.track, { backgroundColor: bgColor }]}>
-        <Animated.View
-          style={[
-            styles.fill,
-            {
-              backgroundColor: isLow ? COLORS.danger : color,
-              width: widthAnim.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-            },
-          ]}
-        />
-        {thresholdPct !== null && (
-          <View style={[styles.threshold, { left: `${thresholdPct}%` }]} />
-        )}
+      <View style={styles.barRow}>
+        <View style={[styles.track, { backgroundColor: bgColor }]}>
+          <Animated.View
+            style={[
+              styles.fill,
+              {
+                backgroundColor: isLow ? COLORS.danger : color,
+                width: widthAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                }),
+              },
+            ]}
+          />
+          {thresholdPct !== null && (
+            <View style={[styles.threshold, { left: `${thresholdPct}%` }]} />
+          )}
+        </View>
+        <Text style={[styles.value, isLow && { color: COLORS.danger }]} numberOfLines={1}>
+          {Math.round(value)}
+        </Text>
       </View>
     </View>
   );
@@ -101,13 +105,19 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    marginBottom: 3,
   },
-  icon: { fontSize: 16, marginRight: SPACING.xs },
+  icon: { fontSize: 15, marginRight: 4 },
   label: { ...FONTS.caption, color: COLORS.textSecondary, flex: 1 },
-  value: { ...FONTS.bodyBold, color: COLORS.text },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  value: { ...FONTS.caption, fontWeight: '700', color: COLORS.text, minWidth: 20, textAlign: 'right' },
   change: { ...FONTS.caption, marginLeft: SPACING.xs },
   track: {
+    flex: 1,
     height: 8,
     borderRadius: RADIUS.full,
     overflow: 'hidden',

@@ -137,50 +137,32 @@ export function RunSummaryScreen({ navigation }: any) {
         </Card>
 
         <Text style={styles.sectionTitle}>This week you faced</Text>
-        {state.dayResults.map((result) => {
-          const mood = getDayModifier(state.dayModifierOrder[result.day - 1]);
-          return (
-            <Card key={result.day} style={styles.dayCard}>
-              <View style={styles.dayHeader}>
-                <Text style={styles.dayIcon}>{result.scenario.icon}</Text>
-                <View style={styles.dayText}>
-                  <Text style={styles.dayTitle}>
-                    Day {result.day}: {result.scenario.title}
-                  </Text>
-                  <Text style={styles.dayChoice}>
-                    {result.choice === 'yes' ? result.scenario.yesLabel : result.scenario.noLabel}
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.dayRaise,
-                    result.outcome.performance + result.outcome.raiseProgress >= 0
-                      ? styles.positive
-                      : styles.negative,
-                  ]}
-                >
-                  {result.outcome.performance + result.outcome.raiseProgress >= 0 ? '+' : ''}
-                  {result.outcome.performance + result.outcome.raiseProgress}📊
+        <Card style={styles.daysCard}>
+          {state.dayResults.map((result, idx) => {
+            const mood = getDayModifier(state.dayModifierOrder[result.day - 1]);
+            const delta = result.outcome.performance + result.outcome.raiseProgress;
+            return (
+              <View
+                key={result.day}
+                style={[styles.dayRow, idx < state.dayResults.length - 1 && styles.dayRowBorder]}
+              >
+                <Text style={styles.dayRowIcon}>{result.scenario.icon}</Text>
+                <Text style={styles.dayRowTitle} numberOfLines={1}>
+                  Day {result.day}: {result.scenario.title} {mood.emoji}
+                </Text>
+                <Text style={[styles.dayRowDelta, delta >= 0 ? styles.positive : styles.negative]}>
+                  {delta >= 0 ? '+' : ''}
+                  {delta}📊
                 </Text>
               </View>
-              <Text style={styles.dayMood}>
-                {mood.emoji} {mood.label}
-              </Text>
-            </Card>
-          );
-        })}
-
-        {npcsMet.length > 0 && (
-          <Card style={styles.npcCard}>
-            <Text style={styles.npcTitle}>Cast of characters</Text>
-            <Text style={styles.npcList}>{npcsMet.join(' · ')}</Text>
-          </Card>
-        )}
+            );
+          })}
+        </Card>
 
         <Card style={styles.totalsCard}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Survival points this shift</Text>
-            <Text style={styles.totalValue}>+{runPoints} pts toward leaderboard</Text>
+            <Text style={styles.totalValue}>+{runPoints} pts</Text>
           </View>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Performance gained this week</Text>
@@ -189,12 +171,18 @@ export function RunSummaryScreen({ navigation }: any) {
               {totalPerfGained}
             </Text>
           </View>
-          <View style={styles.totalRow}>
+          <View style={[styles.totalRow, npcsMet.length === 0 && styles.totalRowLast]}>
             <Text style={styles.totalLabel}>Final energy / sanity / performance</Text>
             <Text style={styles.totalValue}>
               {state.energy}⚡ · {state.sanity}🧠 · {state.performance}📊
             </Text>
           </View>
+          {npcsMet.length > 0 && (
+            <View style={[styles.totalRow, styles.totalRowLast]}>
+              <Text style={styles.totalLabel}>Characters met</Text>
+              <Text style={styles.totalValue} numberOfLines={1}>{npcsMet.join(' · ')}</Text>
+            </View>
+          )}
         </Card>
       </Animated.View>
     </EndRunScreenLayout>
@@ -204,8 +192,8 @@ export function RunSummaryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   eyebrow: { ...FONTS.caption, color: COLORS.accent, textTransform: 'uppercase', letterSpacing: 1 },
   title: { ...FONTS.heading, color: COLORS.text, marginTop: SPACING.xs },
-  subtitle: { ...FONTS.body, color: COLORS.textSecondary, marginTop: SPACING.sm, lineHeight: 24, marginBottom: SPACING.md },
-  recapBtn: { marginBottom: SPACING.md, width: '100%' },
+  subtitle: { ...FONTS.body, color: COLORS.textSecondary, marginTop: SPACING.xs, lineHeight: 22, marginBottom: SPACING.sm },
+  recapBtn: { marginBottom: SPACING.sm, width: '100%' },
   syncBanner: {
     backgroundColor: COLORS.accentLight,
     padding: SPACING.md,
@@ -217,43 +205,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
+    padding: SPACING.md,
   },
   gradeBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.lg,
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.card,
   },
-  gradeText: { fontSize: 28, fontWeight: '800' },
+  gradeText: { fontSize: 20, fontWeight: '800' },
   gradeInfo: { flex: 1 },
   gradeLabel: { ...FONTS.bodyBold, color: COLORS.text },
   gradeBonus: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 4 },
-  sectionTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.sm },
-  dayCard: { marginBottom: SPACING.sm },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  dayIcon: { fontSize: 28 },
-  dayText: { flex: 1 },
-  dayTitle: { ...FONTS.bodyBold, color: COLORS.text },
-  dayChoice: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 2 },
-  dayRaise: { ...FONTS.bodyBold },
-  positive: { color: COLORS.success },
-  negative: { color: COLORS.danger },
-  dayMood: { ...FONTS.small, color: COLORS.textMuted, marginTop: SPACING.sm },
-  npcCard: { marginTop: SPACING.sm, marginBottom: SPACING.md },
-  npcTitle: { ...FONTS.caption, color: COLORS.textMuted, marginBottom: SPACING.xs },
-  npcList: { ...FONTS.body, color: COLORS.textSecondary, lineHeight: 22 },
-  totalsCard: { marginBottom: SPACING.lg },
-  totalRow: {
+  sectionTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.xs },
+  daysCard: { marginBottom: SPACING.sm, paddingVertical: SPACING.xs },
+  dayRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
+  dayRowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.cardBorder,
   },
+  dayRowIcon: { fontSize: 20 },
+  dayRowTitle: { ...FONTS.caption, fontWeight: '700', color: COLORS.text, flex: 1 },
+  dayRowDelta: { ...FONTS.bodyBold },
+  positive: { color: COLORS.success },
+  negative: { color: COLORS.danger },
+  totalsCard: { marginBottom: SPACING.sm, padding: SPACING.md },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.cardBorder,
+  },
+  totalRowLast: { borderBottomWidth: 0 },
   totalLabel: { ...FONTS.body, color: COLORS.textSecondary, flex: 1, marginRight: SPACING.sm },
   totalValue: { ...FONTS.bodyBold, color: COLORS.text, flexShrink: 1, textAlign: 'right' },
 });
