@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
+import { captureError } from '../services/telemetry';
 
 interface Props {
   children: ReactNode;
@@ -19,9 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    if (__DEV__) {
-      console.error('App crash:', error, info.componentStack);
-    }
+    captureError(error, { source: 'react', componentStack: info.componentStack ?? undefined });
   }
 
   private handleReset = () => {

@@ -196,15 +196,15 @@ export const EXTRA_SCENARIO_DESCRIPTIONS: Record<string, RoleText> = {
   }),
   'unmuted-chaos': byRole({
     default:
-      'During the town hall, someone is not on mute. Coffee shop conversation competes with the CEO.',
-    builder: 'During the town hall, someone is not on mute. You hear a standup argument competing with the CEO.',
-    'product-partner': 'During the town hall, someone is not on mute. You hear a roadmap debate competing with the CEO.',
-    'fast-learner': 'During the town hall, someone is not on mute. You hear onboarding gossip competing with the CEO.',
-    craftsperson: 'During the town hall, someone is not on mute. You hear a design critique competing with the CEO.',
-    'truth-finder': 'During the town hall, someone is not on mute. You hear someone arguing about numbers competing with the CEO.',
-    'reliability-pro': 'During the town hall, someone is not on mute. You hear pager chatter competing with the CEO.',
-    mentor: 'During the town hall, someone is not on mute. You hear your team venting competing with the CEO.',
-    professor: 'During the town hall, someone is not on mute. You hear someone splitting a dinner bill, loudly and incorrectly, competing with the CEO.',
+      'During the town hall, a teammate is venting on a hot mic, with no idea they are live. The whole company can hear.',
+    builder: 'During the town hall, a teammate is hot-mic\'d, ranting about a code review and not realizing they are live. The whole company can hear.',
+    'product-partner': 'During the town hall, a teammate is hot-mic\'d, trashing the roadmap and not realizing they are live. The whole company can hear.',
+    'fast-learner': 'During the town hall, a teammate is hot-mic\'d, spilling onboarding gossip and not realizing they are live. The whole company can hear.',
+    craftsperson: 'During the town hall, a teammate is hot-mic\'d, tearing apart a design and not realizing they are live. The whole company can hear.',
+    'truth-finder': 'During the town hall, a teammate is hot-mic\'d, insisting the numbers are massaged and not realizing they are live. The whole company can hear.',
+    'reliability-pro': 'During the town hall, a teammate is hot-mic\'d, ranting about the on-call rotation and not realizing they are live. The whole company can hear.',
+    mentor: 'During the town hall, a teammate is hot-mic\'d, venting about their manager and not realizing they are live. The whole company can hear.',
+    professor: 'During the town hall, a teammate is hot-mic\'d, picking apart a colleague\'s sloppy methodology and not realizing they are live. The whole company can hear.',
   }),
   'townhall-question': byRole({
     default:

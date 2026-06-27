@@ -20,6 +20,7 @@ import {
   validateUsername,
 } from '../storage/playerProfile';
 import { isUsernameAvailable, upsertPlayerScore } from '../services/supabase';
+import { trackEvent } from '../services/telemetry';
 import { getStandTileForLocation } from '../utils/officeNavigation';
 import { calculateRunGrade } from '../utils/runGrade';
 import { calculateRunScore } from '../utils/runScore';
@@ -56,7 +57,7 @@ export interface GameState {
   flags: GameFlag[];
 }
 
-type Action =
+export type Action =
   | { type: 'SELECT_CHARACTER'; role: CharacterRole; emoji: string }
   | {
       type: 'START_GAME';
@@ -81,7 +82,7 @@ function clamp(val: number, min: number, max: number) {
   return Math.max(min, Math.min(max, val));
 }
 
-const initialState: GameState = {
+export const initialState: GameState = {
   energy: 80,
   sanity: 80,
   performance: STARTING_PERFORMANCE,
@@ -125,7 +126,7 @@ function checkNearInteractable(px: number, py: number, activeId: string | null):
   return getAdjacentInteractable(px, py, getScenarioLocation(activeId)) !== null;
 }
 
-function gameReducer(state: GameState, action: Action): GameState {
+export function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'SELECT_CHARACTER': {
       return { ...state, playerRole: action.role, playerEmoji: action.emoji };
@@ -367,8 +368,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       moodCycleReset: moodPick.cycleReset,
     });
 
+    trackEvent('run_started', { role: state.playerRole });
     setPlayerHistory(history);
-  }, []);
+  }, [state.playerRole]);
 
   const recordRunComplete = useCallback(async (): Promise<{
     cloudSync: 'ok' | 'failed' | 'skipped' | 'already-recorded';
@@ -408,6 +410,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const won =
       state.gameStatus === 'win' ||
       (state.gameStatus !== 'stat-burnout' && state.performance >= RAISE_THRESHOLD);
+
+    trackEvent('run_completed', {
+      status: state.gameStatus,
+      won,
+      role: state.playerRole,
+      days: state.dayResults.length,
+      performance: state.performance,
+      energy: state.energy,
+      sanity: state.sanity,
+    });
 
     if (!profile.username) {
       setLastRunSyncMessage('Run saved locally. Set a badge name to sync the leaderboard.');
@@ -459,6 +471,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     state.sanity,
     state.performance,
     state.gameStatus,
+    state.playerRole,
   ]);
 
   React.useEffect(() => {

@@ -1,6 +1,5 @@
 import { CharacterRole } from './characters';
 import { CHOICE_LABELS } from './choiceTextExtras';
-import { applyOutcomeScenarioFlavor } from './outcomeRoleAdapter';
 import { COHESION_OUTCOME_NARRATIVES } from './outcomeNarrativesCohesion';
 import { EXTRA_SCENARIO_DESCRIPTIONS } from './scenarioTextExtras';
 import { Outcome, Scenario } from './scenarios';
@@ -298,79 +297,10 @@ const SCENARIO_DESCRIPTIONS: Record<string, RoleText> = {
   },
 };
 
-const OUTCOME_NARRATIVES: Record<string, Partial<RoleText>> = {
-  ...COHESION_OUTCOME_NARRATIVES,
-  'late-night-task:yes:1': {
-    builder: 'Plot twist: the CEO saw your commit at 8 PM and mentioned it in the all-hands. Derek reacted with a thumbs-up in the channel. Exhausting, but vindicated.',
-    'product-partner': 'Plot twist: the CEO loved your late-night roadmap update and mentioned it in the all-hands. Patricia DM\'d: "Good hustle." Your dinner was late, not lost.',
-    'fast-learner': 'Plot twist: leadership noticed your thorough research doc and mentioned it in the all-hands. Your manager said "good initiative." The stack makes more sense now.',
-    craftsperson: 'Plot twist: the CEO loved the midnight mockup polish and mentioned it in the all-hands. The design lead DM\'d thanks. Worth skipping one yoga class.',
-    'truth-finder': 'Plot twist: the CEO cited your late-night analysis in the all-hands. The deck actually used your numbers. The evening cost you sleep, not credibility.',
-    'reliability-pro': 'Plot twist: leadership saw the health check you ran at 8 PM and mentioned it in the all-hands. On-call respects you more today. Climbing can wait until Saturday.',
-    mentor: 'Plot twist: leadership loved the growth plan you refined at 8 PM and mentioned it in the all-hands. A report replied: "Glad you are steering us." You made it home before everyone was asleep.',
-    professor: 'Plot twist: leadership cited your model revision in the all-hands. You got home late, but your grandson was still up. He wanted to hear about "the forecast lady" before the chess board came out.',
-  },
-  'late-night-task:no:0': {
-    builder: 'You crushed leg day, slept like a baby, and came in the next morning with fresh eyes. The task took 20 minutes.',
-    'product-partner': 'You made your dinner reservation, slept well, and knocked out the roadmap update in 20 minutes the next morning.',
-    'fast-learner': 'You logged off on time, slept well, and finished the research task in 20 minutes with a clear head.',
-    craftsperson: 'You made yoga, slept well, and fixed the mockups in 20 minutes the next morning.',
-    'truth-finder': 'You left on time, slept well, and pulled the data in 20 minutes before your first coffee.',
-    'reliability-pro': 'You hit the climbing gym, slept well, and ran the health check in 20 minutes the next morning.',
-    mentor: 'You made it home for dinner, slept well, and refined the growth plan in 20 minutes before standup.',
-    professor: 'You reviewed the chess game with your grandson, slept well, and fixed the lemma in 20 minutes over morning tea.',
-  },
-  'slack-fire:yes:0': {
-    builder: 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you a "centrist coder." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    'product-partner': 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "the roadmap centrist." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    'fast-learner': 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "process-pilled." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    craftsperson: 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "the padding moderate." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    'truth-finder': 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "statistically naive." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    'reliability-pro': 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "the deploy coward." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    mentor: 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "the culture centrist." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-    professor: 'You posted a thoughtful, balanced take. Both sides hated it. Someone called you "a frequentist dinosaur." You\'ve been subtweeted in off-topic chat for 3 days straight.',
-  },
-  'slack-fire:no:0': {
-    builder: 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your PR got approved while you were gone.',
-    'product-partner': 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your roadmap doc got approved while you were gone.',
-    'fast-learner': 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your onboarding doc got a thumbs up while you were gone.',
-    craftsperson: 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your design review got approved while you were gone.',
-    'truth-finder': 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your analysis got signed off while you were gone.',
-    'reliability-pro': 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your incident postmortem got approved while you were gone.',
-    mentor: 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your team feedback summary got praise while you were gone.',
-    professor: 'You muted company chat, made a cup of tea, and watched a bird outside your window for 4 minutes. You have achieved inner peace. Your model review got approved while you were gone.',
-  },
-  'demo-day:yes:0': {
-    builder: 'You winged it. The app crashed live, then a VP asked the one thing your 40% could not do. "That\'s a known issue" only stretches so far. Leadership left unconvinced, and the missing half was now on record as yours.',
-    'product-partner': 'You winged it. The roadmap had obvious holes, and a VP asked about the 40% you had not built yet. "That\'s on the roadmap" only stretches so far. Leadership left unconvinced, and the gaps were now on record as yours.',
-    'fast-learner': 'You winged it. A VP asked the one question your 40% could not answer, and "still ramping up" only stretches so far. Leadership left unconvinced. As the new hire, the shaky demo became the thing they remembered about you.',
-    craftsperson: 'You winged it. The prototype froze, then a VP poked at the 40% of flows that did not exist yet. "That\'s a known issue" only stretches so far. Leadership left unconvinced, and the half-built flows were now on record as yours.',
-    'truth-finder': 'You winged it. A chart loaded with placeholder numbers, then a VP asked about the 40% you had not validated. "That\'s the exploratory view" only stretches so far. Leadership left unconvinced, and the unbacked claims were now on record as yours.',
-    'reliability-pro': 'You winged it. The dashboard showed N/A live, then a VP asked about the 40% you had not instrumented. "That\'s expected in staging" only stretches so far. Leadership left unconvinced, and the blind spots were now on record as yours.',
-    mentor: 'You winged it. Half the team-health slides were still templates, and a VP asked about the 40% you had not gathered. "We\'re still collecting signal" only stretches so far. Leadership left unconvinced, and the gaps were now on record as yours.',
-    professor: 'You winged it. A slide had a notation error, then a VP pressed on the 40% of the proof you had not finished. "That\'s a draft lemma" only stretches so far. Leadership left unconvinced, and the holes were now on record as yours.',
-  },
-  'demo-day:yes:1': {
-    builder: 'Murphy\'s Law went on vacation. The demo worked PERFECTLY on the happy path you showed. Leadership loved it. You are now the face of Q3 innovation. The console.logs are your little secret.',
-    'product-partner': 'Murphy\'s Law went on vacation. The roadmap review landed perfectly. Leadership loved it. You are now the face of Q3 strategy. The TODO slides are your little secret.',
-    'fast-learner': 'Murphy\'s Law went on vacation. Your onboarding findings presentation was sharp and curious. Leadership loved it. You are now "the thoughtful new hire."',
-    craftsperson: 'Murphy\'s Law went on vacation. The flow walkthrough was flawless on the big screen. Leadership loved it. You are now the face of Q3 design. final_final_v2 is your little secret.',
-    'truth-finder': 'Murphy\'s Law went on vacation. The experiment readout was crisp and convincing. Leadership loved it. You are now the face of Q3 insights. The loading confidence intervals are your little secret.',
-    'reliability-pro': 'Murphy\'s Law went on vacation. The reliability dashboard behaved on the big screen. Leadership loved it. You are now the face of Q3 stability. The one working chart carried the room.',
-    mentor: 'Murphy\'s Law went on vacation. Your team health update was warm and credible. Leadership loved it. You are now the face of Q3 people leadership. "Insert wins here" never showed.',
-    professor: 'Murphy\'s Law went on vacation. The model overview was elegant and clear. Leadership loved it. You are now the face of Q3 research. The missing lemma is your little secret.',
-  },
-  'demo-day:no:0': {
-    builder: 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You shipped something polished and got genuine applause. Integrity: 1, Panic: 0.',
-    'product-partner': 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You delivered a tight roadmap review and got genuine applause. Integrity: 1, Panic: 0.',
-    'fast-learner': 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You gave a sharp presentation and got genuine applause. Integrity: 1, Panic: 0.',
-    craftsperson: 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You walked through polished flows and got genuine applause. Integrity: 1, Panic: 0.',
-    'truth-finder': 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You delivered a rigorous readout and got genuine applause. Integrity: 1, Panic: 0.',
-    'reliability-pro': 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You demoed a solid reliability update and got genuine applause. Integrity: 1, Panic: 0.',
-    mentor: 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You gave a thoughtful team update and got genuine applause. Integrity: 1, Panic: 0.',
-    professor: 'You asked to reschedule. Your manager respected the honesty and gave you two more days. You presented the complete proof and got genuine applause. Integrity: 1, Panic: 0.',
-  },
-};
+// Single source of truth for role-specific outcome copy. Every entry is a complete,
+// authored string in outcomeNarrativesCohesion.ts; there is no runtime substring
+// substitution, so personalization cannot introduce grammar artifacts.
+const OUTCOME_NARRATIVES: Record<string, Partial<RoleText>> = COHESION_OUTCOME_NARRATIVES;
 
 export function getScenarioDescription(scenario: Scenario, role: CharacterRole): string {
   const byScenario = SCENARIO_DESCRIPTIONS[scenario.id];
@@ -402,7 +332,7 @@ export function resolveOutcomeNarrative(
   const key = `${scenarioId}:${choice}:${outcomeIndex}`;
   const explicit = OUTCOME_NARRATIVES[key]?.[role];
   if (explicit) return explicit;
-  return applyOutcomeScenarioFlavor(scenarioId, role, fallback);
+  return fallback;
 }
 
 export function resolveOutcome(

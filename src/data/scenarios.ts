@@ -1245,7 +1245,7 @@ export const SCENARIOS: Scenario[] = [
     yesOutcomes: [
       {
         narrative:
-          'You evacuated like a professional. The demo resumed tomorrow. Leadership respected the calm. Derek said you "lost momentum." The building was indeed doing another lap.',
+          'You evacuated like a professional. The demo resumed the next day. Leadership respected the calm. Derek said you "lost momentum." The building was indeed doing another lap.',
         energy: -10,
         sanity: 5,
         performance: 14,
@@ -1608,22 +1608,22 @@ export const SCENARIOS: Scenario[] = [
     locationLabel: 'Company Town Hall',
     title: 'Someone Is Not on Mute',
     description:
-      'The CEO is talking about quarterly priorities. Then: chewing. A door slam. Someone\'s entire coffee shop conversation. Maybe two people arguing about parking. The host says "I think someone forgot to mute." They do not mute. You have missed three sentences that might have been about your team.',
-    yesLabel: 'Say something in chat or speak up',
-    noLabel: 'Stay quiet and try to listen through it',
+      'The CEO is mid-priorities when a hot mic opens up. You recognize the voice: a teammate who has no idea they are live, venting about their manager and getting bolder by the second. It is also stepping right over the part about your team. The host\'s "someone check your mute" is not landing.',
+    yesLabel: 'Tip them off to mute',
+    noLabel: 'Stay out of it',
     yesOutcomes: [
       {
         narrative:
-          'You typed "please check mute" in the chat. Three other people typed the same thing. The noise stopped. The CEO repeated nothing. You still have no idea what "strategic pivot" means this quarter.',
+          'You fired off a direct message: "YOU ARE LIVE. MUTE." They caught it a breath before the part they would never live down. Mortified, grateful, silent. The noise died, the CEO carried on, and you actually caught the update about your team.',
         energy: -10,
         sanity: 5,
         performance: 8,
-        raiseProgress: 0,
+        raiseProgress: 2,
         weight: 50,
       },
       {
         narrative:
-          'You unmuted and asked politely. The noise was someone\'s kitchen: full family debate about whose turn it is to walk the dog. Half the company heard it. HR will have feelings. The mic finally went dead.',
+          'You flagged it in the chat: "check your mute." It worked, but now everyone knew whose mic it was. Your teammate was embarrassed, though you cut them off before the part they would truly regret. A leader noticed, quietly, that you handled it with class.',
         energy: -15,
         sanity: -5,
         performance: 12,
@@ -1634,7 +1634,7 @@ export const SCENARIOS: Scenario[] = [
     noOutcomes: [
       {
         narrative:
-          'You white-knuckled through it. The background conversation was somehow more compelling than the town hall. You learned Chad\'s cousin has strong opinions about laminate flooring. You learned nothing about budget.',
+          'You stayed out of it. Someone else flagged the mute eventually, but not before your teammate said something about their manager that the whole company definitely heard. You caught none of the actual update, and you could have spared them.',
         energy: -15,
         sanity: -20,
         performance: -8,
