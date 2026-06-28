@@ -54,26 +54,26 @@ Clock in, make the hard calls, and try to reach Friday with your sanity intact. 
 
 ## Description (max 4000)
 ```
-9 to 5: Survive is a darkly funny survival game about making it through the modern workweek with your career, energy, and sanity intact.
+9 to 5: Survive is a wickedly fun survival game about conquering the modern workweek with your career, energy, and sanity intact.
 
-Each shift drops you into the absurd reality of office life: pointless meetings, passive-aggressive messages, a reorg nobody asked for, and a boss who "just has a quick question." Every scenario is a choice. Speak up or stay quiet. Cover for a coworker or protect yourself. Take the risk or play it safe. There is no perfect answer, only trade-offs, and the office is always watching.
+Every shift drops you into the gloriously absurd world of office life: surprise meetings, passive-aggressive messages, a reorg nobody asked for, and big decisions that somehow all land on you. Each scenario is a choice. Speak up or stay smart and quiet. Cover for a coworker or look out for yourself. Take the bold swing or play it safe. There is no single right answer, only clever trade-offs, and a workplace full of personality reacting to every move you make.
 
 SURVIVE THE WEEK
-Start Monday and try to reach Friday. Balance three things that are always in tension: your Energy, your Sanity, and your Performance. Let any of them slip too far and your week falls apart.
+Clock in on Monday and make it to Friday. Juggle three things that are always in tension: your Energy, your Sanity, and your Performance. Master the balance and the corner office is yours.
 
 READ THE ROOM
-Outcomes are not random luck. Your reputation, the mood of the day, and your current state all tilt the odds. Pay attention, prepare for the big moments, and play the long game.
+Outcomes are never blind luck. Your reputation, the mood of the day, and your current state all shift the odds in your favor or against you. Stay sharp, prepare for the big moments, and play the long game like a pro.
 
 PICK YOUR FIGHTER
-Choose from a roster of office archetypes, each with a perk that changes how you survive. The way you win as the calm veteran is not the way you win as the anxious new hire.
+Choose from a roster of office archetypes, each with a perk that changes how you play. Winning as the unflappable veteran feels nothing like winning as the wide-eyed new hire, so come back and master them all.
 
 NO TWO WEEKS THE SAME
-Dozens of scenarios and shifting office climates mean every run is a different kind of disaster. The game remembers what you have already seen and keeps the chaos fresh.
+Dozens of scenarios and ever-shifting office climates mean every run is a fresh, ridiculous adventure. The game remembers what you have already seen and keeps the surprises coming.
 
 COMPETE AND CONTRIBUTE
-Climb the optional leaderboard and submit your own workplace nightmares to the community idea board. Prefer to keep to yourself? Play fully offline. No account required, ever.
+Climb the optional leaderboard and submit your own workplace nightmares to the community idea board. Want to keep it solo? Play fully offline. No account required, ever.
 
-Whether you are dodging a doomed demo, surviving an all-hands, or just trying to take a real lunch break, 9 to 5: Survive turns the daily grind into the best kind of bad day.
+Quick to pick up, hard to put down, and endlessly replayable. Whether you are dodging a doomed demo, charming an all-hands, or just trying to take a real lunch break, 9 to 5: Survive turns the daily grind into the best part of your day.
 
 Clock in. Survive to Friday.
 ```
@@ -81,8 +81,10 @@ Clock in. Survive to Friday.
 ---
 
 ## Keywords (max 100 chars total, comma separated, no spaces)
+Optimized: excludes words already indexed via the app name/subtitle
+(office, survival, survive, game) and uses the space for higher-intent terms.
 ```
-office,corporate,satire,survival,choices,career,boss,meetings,burnout,work,humor,decision,sim
+corporate,satire,choices,career,workplace,job,meetings,deadline,burnout,humor,comedy,story,sim,drama
 ```
 
 ---
