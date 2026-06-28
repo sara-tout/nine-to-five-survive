@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  Modal,
+  Alert,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../constants/theme';
 import { Button } from '../components/Button';
@@ -20,9 +22,18 @@ import {
   IdeaSort,
   isBackendConfigured,
   postScenarioIdea,
+  reportScenarioIdea,
   ScenarioIdea,
   toggleScenarioIdeaLike,
 } from '../services/supabase';
+import { findBlockedTerm } from '../utils/contentModeration';
+import {
+  acceptGuidelines,
+  blockUser,
+  hasAcceptedGuidelines,
+  hideIdea,
+  loadModerationState,
+} from '../storage/moderation';
 
 const REQUEST_CATEGORIES = [
   { id: 'scenario', label: 'Scenario', emoji: '📋', prefix: 'Scenario: ' },
@@ -55,6 +66,9 @@ export function IdeasScreen({ navigation }: any) {
   const [posting, setPosting] = useState(false);
   const [likingId, setLikingId] = useState<string | null>(null);
   const [category, setCategory] = useState<(typeof REQUEST_CATEGORIES)[number]['id']>('scenario');
+  const [blockedUsers, setBlockedUsers] = useState<Set<string>>(new Set());
+  const [hiddenIdeas, setHiddenIdeas] = useState<Set<string>>(new Set());
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,17 +82,14 @@ export function IdeasScreen({ navigation }: any) {
     load();
   }, [load]);
 
-  const handlePost = async () => {
-    if (!playerProfile.username) {
-      navigation.replace('Username', { returnTo: 'Ideas' });
-      return;
-    }
-    if (posting) return;
-    const trimmed = body.trim();
-    if (trimmed.length < 8) {
-      setStatus('Add a bit more detail so we know what you want.');
-      return;
-    }
+  React.useEffect(() => {
+    loadModerationState().then((state) => {
+      setBlockedUsers(state.blockedUsers);
+      setHiddenIdeas(state.hiddenIdeas);
+    });
+  }, []);
+
+  const submitIdea = async () => {
     setPosting(true);
     setStatus(null);
     const result = await postScenarioIdea({ username: playerProfile.username, body });
@@ -91,6 +102,76 @@ export function IdeasScreen({ navigation }: any) {
     setCategory('scenario');
     setStatus('Request posted. Upvotes help us prioritize what ships next.');
     load();
+  };
+
+  const handlePost = async () => {
+    if (!playerProfile.username) {
+      navigation.replace('Username', { returnTo: 'Ideas' });
+      return;
+    }
+    if (posting) return;
+    const trimmed = body.trim();
+    if (trimmed.length < 8) {
+      setStatus('Add a bit more detail so we know what you want.');
+      return;
+    }
+    const blockedTerm = findBlockedTerm(trimmed);
+    if (blockedTerm) {
+      setStatus('That looks like it breaks our community rules. Please keep it civil.');
+      return;
+    }
+    if (!(await hasAcceptedGuidelines())) {
+      setShowGuidelines(true);
+      return;
+    }
+    await submitIdea();
+  };
+
+  const handleAcceptGuidelines = async () => {
+    await acceptGuidelines();
+    setShowGuidelines(false);
+    await submitIdea();
+  };
+
+  const handleReport = (idea: ScenarioIdea) => {
+    Alert.alert(
+      'Report this request?',
+      'We\'ll review it and remove it if it breaks our rules. It will be hidden from you right away.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: async () => {
+            const next = await hideIdea(idea.id);
+            setHiddenIdeas(new Set(next));
+            if (playerProfile.username) {
+              await reportScenarioIdea({ ideaId: idea.id, username: playerProfile.username });
+            }
+            setStatus('Thanks for the report. We\'ll take a look.');
+          },
+        },
+      ],
+    );
+  };
+
+  const handleBlock = (idea: ScenarioIdea) => {
+    Alert.alert(
+      `Block ${idea.username}?`,
+      'You won\'t see any requests from this person anymore.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            const next = await blockUser(idea.username);
+            setBlockedUsers(new Set(next));
+            setStatus(`You won't see posts from ${idea.username} anymore.`);
+          },
+        },
+      ],
+    );
   };
 
   const handleLike = async (ideaId: string) => {
@@ -124,6 +205,9 @@ export function IdeasScreen({ navigation }: any) {
   const configured = isBackendConfigured();
   const activeCategory = REQUEST_CATEGORIES.find((item) => item.id === category) ?? REQUEST_CATEGORIES[0];
   const inputPlaceholder = `${activeCategory.prefix}${REQUEST_PLACEHOLDERS[category]}`;
+  const visibleIdeas = ideas.filter(
+    (idea) => !hiddenIdeas.has(idea.id) && !blockedUsers.has(idea.username),
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,6 +279,10 @@ export function IdeasScreen({ navigation }: any) {
               icon="📨"
               style={styles.postBtn}
             />
+            <Text style={styles.guidelinesNote}>
+              By posting, you agree to keep it civil. Hateful, sexual, or abusive content is not
+              tolerated and will be removed.
+            </Text>
           </Card>
 
           <View style={styles.sectionHeader}>
@@ -221,41 +309,80 @@ export function IdeasScreen({ navigation }: any) {
 
           {error && configured && <Text style={styles.error}>{error}</Text>}
 
-          {ideas.length === 0 && !loading ? (
+          {visibleIdeas.length === 0 && !loading ? (
             <Card>
               <Text style={styles.empty}>No requests yet. Ask for a scenario, character, or feature.</Text>
             </Card>
           ) : (
-            ideas.map((idea) => (
-              <Card key={idea.id} style={styles.requestCard}>
-                <View style={styles.requestHeader}>
-                  <Text style={styles.requestUser}>{idea.username}</Text>
-                  <Pressable
-                    onPress={() => handleLike(idea.id)}
-                    disabled={!configured || likingId === idea.id}
-                    style={({ pressed }) => [
-                      styles.likeBtn,
-                      idea.liked_by_viewer && styles.likeBtnActive,
-                      pressed && { opacity: 0.85 },
-                    ]}
-                  >
-                    <Text style={[styles.likeIcon, idea.liked_by_viewer && styles.likeIconActive]}>
-                      {idea.liked_by_viewer ? '♥' : '♡'}
+            visibleIdeas.map((idea) => {
+              const isOwn = idea.username === playerProfile.username;
+              return (
+                <Card key={idea.id} style={styles.requestCard}>
+                  <View style={styles.requestHeader}>
+                    <Text style={styles.requestUser}>{idea.username}</Text>
+                    <Pressable
+                      onPress={() => handleLike(idea.id)}
+                      disabled={!configured || likingId === idea.id}
+                      style={({ pressed }) => [
+                        styles.likeBtn,
+                        idea.liked_by_viewer && styles.likeBtnActive,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <Text style={[styles.likeIcon, idea.liked_by_viewer && styles.likeIconActive]}>
+                        {idea.liked_by_viewer ? '♥' : '♡'}
+                      </Text>
+                      <Text style={[styles.likeCount, idea.liked_by_viewer && styles.likeCountActive]}>
+                        {idea.like_count}
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.requestBody}>{idea.body}</Text>
+                  <View style={styles.requestFooter}>
+                    <Text style={styles.requestDate}>
+                      {new Date(idea.created_at).toLocaleString()}
                     </Text>
-                    <Text style={[styles.likeCount, idea.liked_by_viewer && styles.likeCountActive]}>
-                      {idea.like_count}
-                    </Text>
-                  </Pressable>
-                </View>
-                <Text style={styles.requestBody}>{idea.body}</Text>
-                <Text style={styles.requestDate}>
-                  {new Date(idea.created_at).toLocaleString()}
-                </Text>
-              </Card>
-            ))
+                    {!isOwn && (
+                      <View style={styles.moderationActions}>
+                        <Pressable onPress={() => handleReport(idea)} hitSlop={8}>
+                          <Text style={styles.moderationLink}>Report</Text>
+                        </Pressable>
+                        <Text style={styles.moderationDivider}>·</Text>
+                        <Pressable onPress={() => handleBlock(idea)} hitSlop={8}>
+                          <Text style={styles.moderationLink}>Block</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                </Card>
+              );
+            })
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showGuidelines}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGuidelines(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Community guidelines</Text>
+            <Text style={styles.modalBody}>
+              The request board is shared with other players. Keep it civil and on-topic.
+              {'\n\n'}There is zero tolerance for hateful, harassing, sexual, or otherwise
+              objectionable content. Posts that break these rules are removed, and repeat offenders
+              are blocked. You can report or block anyone whose posts cross the line.
+            </Text>
+            <Button title="I agree - post my request" onPress={handleAcceptGuidelines} icon="✅" />
+            <Pressable onPress={() => setShowGuidelines(false)} style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -361,5 +488,31 @@ const styles = StyleSheet.create({
   likeCount: { ...FONTS.caption, color: COLORS.textSecondary, fontWeight: '700' },
   likeCountActive: { color: COLORS.danger },
   requestBody: { ...FONTS.body, color: COLORS.text, marginTop: SPACING.xs, lineHeight: 22 },
-  requestDate: { ...FONTS.small, color: COLORS.textMuted, marginTop: SPACING.sm },
+  requestFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  requestDate: { ...FONTS.small, color: COLORS.textMuted },
+  moderationActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  moderationLink: { ...FONTS.small, color: COLORS.textMuted, fontWeight: '600' },
+  moderationDivider: { ...FONTS.small, color: COLORS.textMuted },
+  guidelinesNote: { ...FONTS.small, color: COLORS.textMuted, marginTop: SPACING.sm, lineHeight: 16 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: SPACING.lg,
+  },
+  modalCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+  },
+  modalTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.sm },
+  modalBody: { ...FONTS.body, color: COLORS.textSecondary, lineHeight: 22, marginBottom: SPACING.lg },
+  modalCancel: { alignItems: 'center', paddingVertical: SPACING.sm, marginTop: SPACING.xs },
+  modalCancelText: { ...FONTS.bodyBold, color: COLORS.textMuted },
 });

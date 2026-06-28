@@ -220,6 +220,27 @@ export async function postScenarioIdea(input: {
   return { ok: true };
 }
 
+export async function reportScenarioIdea(input: {
+  ideaId: string;
+  username: string;
+  reason?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Community cloud not configured yet.' };
+
+  const username = validatedUsername(input.username);
+  if (!username) return { ok: false, error: 'Set a valid badge name before reporting.' };
+
+  const { error } = await supabase.rpc('report_scenario_idea', {
+    p_idea_id: input.ideaId,
+    p_username: username,
+    p_reason: input.reason?.slice(0, 200) ?? null,
+  });
+
+  if (error) return { ok: false, error: toUserFacingSyncError(error.message) };
+  return { ok: true };
+}
+
 export async function isUsernameAvailable(username: string): Promise<{
   available: boolean;
   error?: string;
