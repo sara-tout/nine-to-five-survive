@@ -204,10 +204,10 @@ const styles = StyleSheet.create({
   gradeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: SPACING.md,
     marginBottom: SPACING.sm,
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   gradeBadge: {
     width: 40,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
   },
   gradeText: { fontSize: 20, fontWeight: '800' },
-  gradeInfo: { flexShrink: 1 },
+  gradeInfo: { flex: 1 },
   gradeLabel: { ...FONTS.bodyBold, color: COLORS.text },
   gradeBonus: { ...FONTS.caption, color: COLORS.textSecondary, marginTop: 4 },
   sectionTitle: { ...FONTS.subheading, color: COLORS.text, marginBottom: SPACING.xs },
