@@ -19,10 +19,11 @@ const BG = '#EEF1F5';
 const NAVY = '#1B2A6B';
 const ACCENT = '#4A90D9';
 
-const SHOT_W = 1040;
+// Larger screenshot = less downscaling from the 1284px-wide source = crisper UI.
+const SHOT_W = 1120;
 const SHOT_H = Math.round((SHOT_W * CANVAS_H) / CANVAS_W); // keep device aspect
 const SHOT_X = Math.round((CANVAS_W - SHOT_W) / 2);
-const SHOT_Y = 470;
+const SHOT_Y = 320;
 const RADIUS = 44;
 
 // App Store order. Filenames are the originals shared from the device.
@@ -42,9 +43,9 @@ function resolveSource(prefix) {
 }
 
 function captionSvg(lines) {
-  const fontSize = 82;
-  const lineHeight = 100;
-  const startY = 175;
+  const fontSize = 76;
+  const lineHeight = 92;
+  const startY = 120;
   const cx = CANVAS_W / 2;
   const tspans = lines
     .map((line, i) => `<text x="${cx}" y="${startY + i * lineHeight}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="${fontSize}" fill="${NAVY}">${line}</text>`)
@@ -57,7 +58,10 @@ function captionSvg(lines) {
 }
 
 async function roundedShot(srcPath) {
-  const resized = await sharp(srcPath).resize(SHOT_W, SHOT_H, { fit: 'cover' }).toBuffer();
+  const resized = await sharp(srcPath)
+    .resize(SHOT_W, SHOT_H, { fit: 'cover', kernel: 'lanczos3' })
+    .sharpen({ sigma: 0.8 })
+    .toBuffer();
   const mask = Buffer.from(
     `<svg width="${SHOT_W}" height="${SHOT_H}"><rect width="${SHOT_W}" height="${SHOT_H}" rx="${RADIUS}" ry="${RADIUS}"/></svg>`,
   );
