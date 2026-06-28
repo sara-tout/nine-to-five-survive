@@ -27,8 +27,16 @@
   <p>Thanks for playing! If you need help or want to share feedback, we'd love to hear from you.</p>
 
   <h2>Contact</h2>
-  <p>Email: <a href="mailto:YOUR_SUPPORT_EMAIL@example.com">YOUR_SUPPORT_EMAIL@example.com</a></p>
+  <p><a id="contact-link" href="#">Email our support team</a><noscript> (support [at] kurocat [dot] app)</noscript>.</p>
   <p>We aim to reply within a few business days.</p>
+  <script>
+    (function () {
+      var user = 'support';
+      var domain = 'kurocat' + '.' + 'app';
+      var a = document.getElementById('contact-link');
+      if (a) { a.href = 'mailto:' + user + '@' + domain; }
+    })();
+  </script>
 
   <h2>Frequently Asked Questions</h2>
   <ul>

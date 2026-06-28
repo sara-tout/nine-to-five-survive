@@ -28,7 +28,8 @@ const RADIUS = 44;
 
 // App Store order. Filenames are the originals shared from the device.
 const SHOTS = [
-  { file: 'IMG_4710', lines: ['Clock in.', 'Survive to Friday.'] },
+  // Cover the local "Playing as <name>" line so no badge name shows on the hero shot.
+  { file: 'IMG_4710', lines: ['Clock in.', 'Survive to Friday.'], cover: [{ top: 2075, height: 95 }] },
   { file: 'IMG_4707', lines: ['Pick your fighter', 'and your perk.'] },
   { file: 'IMG_4709', lines: ['Every choice', 'has a cost.'] },
   { file: 'IMG_4708', lines: ['Walk the floor', 'between crises.'] },
@@ -57,8 +58,34 @@ function captionSvg(lines) {
   );
 }
 
-async function roundedShot(srcPath) {
-  const resized = await sharp(srcPath)
+// Reads one pixel from the source so cover patches blend invisibly into the bg.
+async function sampleColor(srcPath, x, y) {
+  const { data } = await sharp(srcPath)
+    .extract({ left: x, top: y, width: 1, height: 1 })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return `rgb(${data[0]},${data[1]},${data[2]})`;
+}
+
+// Paints background-colored rectangles over the given full-res regions
+// (used to hide the local "Playing as <name>" line on the hero shot).
+async function applyCover(srcPath, cover) {
+  if (!cover || cover.length === 0) return srcPath;
+  const meta = await sharp(srcPath).metadata();
+  const fill = await sampleColor(srcPath, 40, cover[0].top + Math.floor(cover[0].height / 2));
+  const overlays = cover.map((c) => ({
+    input: Buffer.from(
+      `<svg width="${meta.width}" height="${c.height}"><rect width="100%" height="100%" fill="${fill}"/></svg>`,
+    ),
+    top: c.top,
+    left: 0,
+  }));
+  return sharp(srcPath).composite(overlays).png().toBuffer();
+}
+
+async function roundedShot(srcPath, cover) {
+  const base = await applyCover(srcPath, cover);
+  const resized = await sharp(base)
     .resize(SHOT_W, SHOT_H, { fit: 'cover', kernel: 'lanczos3' })
     .sharpen({ sigma: 0.8 })
     .toBuffer();
@@ -82,7 +109,7 @@ async function main() {
   let index = 1;
   for (const shot of SHOTS) {
     const src = resolveSource(shot.file);
-    const framedShot = await roundedShot(src);
+    const framedShot = await roundedShot(src, shot.cover);
     const out = path.join(OUT_DIR, `${String(index).padStart(2, '0')}-${shot.file}.png`);
     await sharp({
       create: { width: CANVAS_W, height: CANVAS_H, channels: 4, background: BG },
