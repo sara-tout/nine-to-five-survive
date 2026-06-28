@@ -20,21 +20,82 @@
     a { color: #4a90d9; }
     ul { padding-left: 20px; }
     li { margin-bottom: 6px; }
+    form { margin-top: 12px; }
+    label { display: block; font-weight: 600; margin: 14px 0 4px; }
+    input, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      font: inherit;
+      color: inherit;
+      background: #fff;
+      border: 1px solid #d7d7cf;
+      border-radius: 8px;
+    }
+    textarea { min-height: 130px; resize: vertical; }
+    button {
+      margin-top: 16px;
+      padding: 11px 22px;
+      font: inherit;
+      font-weight: 700;
+      color: #fff;
+      background: #4a90d9;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #3b7ac0; }
+    .hint { color: #6b6b6b; font-size: 14px; }
+    #form-status { margin-top: 14px; font-weight: 600; }
   </style>
 </head>
 <body>
   <h1>9 to 5: Survive - Support</h1>
   <p>Thanks for playing! If you need help or want to share feedback, we'd love to hear from you.</p>
 
-  <h2>Contact</h2>
-  <p><a id="contact-link" href="#">Email our support team</a><noscript> (support [at] kurocat [dot] app)</noscript>.</p>
-  <p>We aim to reply within a few business days.</p>
+  <h2 id="contact">Contact</h2>
+  <p>Send us a message and we'll get back to you. We aim to reply within a few business days.</p>
+
+  <form id="contact-form" action="https://formspree.io/f/xzdlgazb" method="POST">
+    <label for="email">Your email (so we can reply)</label>
+    <input type="email" id="email" name="email" required placeholder="you@example.com" />
+
+    <label for="badge">Badge name (optional, for leaderboard/idea removal)</label>
+    <input type="text" id="badge" name="badge name" placeholder="Your in-game name" />
+
+    <label for="message">How can we help?</label>
+    <textarea id="message" name="message" required placeholder="Tell us what's up..."></textarea>
+
+    <input type="hidden" name="_subject" value="9 to 5: Survive - support request" />
+    <button type="submit">Send message</button>
+    <p id="form-status" class="hint"></p>
+  </form>
+
   <script>
     (function () {
-      var user = 'support';
-      var domain = 'kurocat' + '.' + 'app';
-      var a = document.getElementById('contact-link');
-      if (a) { a.href = 'mailto:' + user + '@' + domain; }
+      var form = document.getElementById('contact-form');
+      var status = document.getElementById('form-status');
+      if (!form) return;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        status.textContent = 'Sending...';
+        fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        })
+          .then(function (res) {
+            if (res.ok) {
+              form.reset();
+              status.textContent = 'Thanks! Your message has been sent.';
+            } else {
+              status.textContent = 'Something went wrong. Please try again later.';
+            }
+          })
+          .catch(function () {
+            status.textContent = 'Something went wrong. Please try again later.';
+          });
+      });
     })();
   </script>
 
@@ -42,7 +103,7 @@
   <ul>
     <li><strong>Do I need an account?</strong> No. The game is fully playable without signing up. A badge name is only needed if you opt in to the leaderboard or post a scenario idea.</li>
     <li><strong>How do I get on the leaderboard?</strong> Choose a badge name when prompted; your run scores then sync automatically.</li>
-    <li><strong>Can I remove my leaderboard entry or a submitted idea?</strong> Yes - email us with your badge name and we'll remove it.</li>
+    <li><strong>Can I remove my leaderboard entry or a submitted idea?</strong> Yes - use the contact form above with your badge name and we'll remove it.</li>
     <li><strong>Is my data private?</strong> See our <a href="./privacy-policy.html">Privacy Policy</a>.</li>
   </ul>
 </body>
