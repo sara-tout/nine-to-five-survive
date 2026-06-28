@@ -15,11 +15,12 @@
       "backgroundColor": "#1E2A78"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.ninetofive.survive",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": []
+        "UIBackgroundModes": [],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
